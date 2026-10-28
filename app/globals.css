@@ -13,7 +13,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; }
 a { color: var(--accent); }
-.top { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.top { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
 .brand { font-weight: 700; text-decoration: none; color: var(--fg); }
 main { max-width: 760px; margin: 0 auto; padding: 16px; }
 section { margin: 28px 0; }
@@ -51,3 +51,28 @@ del { background: var(--del); text-decoration: line-through; } ins { background:
 input, select, textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); width: 100%; }
 button { font: inherit; font-weight: 700; padding: 10px 14px; border: 0; border-radius: 8px; background: var(--accent); color: var(--bg); cursor: pointer; }
 button:disabled { opacity: .6; }
+
+/* 카드 2: 할 일 */
+.nav { display: flex; gap: 14px; }
+.filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.filters label { display: grid; gap: 4px; font-weight: 600; font-size: .9rem; }
+.filters small { font-weight: 400; color: var(--muted); }
+.filters .wide { grid-column: 1 / -1; }
+.filter-actions { grid-column: 1 / -1; display: flex; gap: 14px; align-items: center; }
+@media (max-width: 600px) { .filters { grid-template-columns: 1fr 1fr; } }
+.sort-rule { margin: 12px 0 6px; padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--card); border-radius: 0 8px 8px 0; font-size: .95rem; }
+.count { margin: 8px 0; }
+.tasks { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.task h2 { font-size: 1.05rem; }
+.task h2 a { color: inherit; }
+.is-done h1, .is-done h2 { text-decoration: line-through; color: var(--muted); }
+.rank { font-weight: 700; color: var(--muted); min-width: 1.4em; }
+.status { font-weight: 700; padding: 1px 8px; border-radius: 99px; }
+.st-open { background: var(--notice-bg); }
+.st-done { background: var(--ins); }
+a.tag { color: var(--fg); text-decoration: none; margin-right: 4px; }
+dd .tag { margin-right: 4px; }
+.due-late { color: var(--high); font-weight: 700; } .due-soon { color: var(--mid); font-weight: 700; } .due-muted { color: var(--muted); }
+.task-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+button.danger { background: var(--high); }
