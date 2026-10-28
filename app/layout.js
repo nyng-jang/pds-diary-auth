@@ -15,6 +15,7 @@ export default function RootLayout({ children }) {
           <nav className="nav" aria-label="주 메뉴">
             <Link href="/">계획</Link>
             <Link href="/tasks">할 일</Link>
+            <Link href="/review">돌아보기</Link>
           </nav>
         </header>
         <main>{children}</main>

@@ -34,6 +34,9 @@ export default function TaskCard({ task: t, today, rank, back, titleAs, full = f
         <Chip icon={due.tone === 'late' ? 'alert' : 'calendar'} tone={dueTone}>{due.text}</Chip>
         <Chip icon="clock">{formatMinutes(t.estimated_minutes)}</Chip>
         <Chip icon="flag" tone={`pri-${t.priority}`}>우선순위 {t.priority}</Chip>
+        {t.log_count > 0 && (
+          <Chip icon="history" href={`/tasks/${t.id}#logs`} title="이 할 일의 실행 기록 보기">실행 기록 {t.log_count}건 · 실제 {formatMinutes(t.actual_minutes)}</Chip>
+        )}
         {t.tags.map((tag) => (
           <Chip key={tag} icon="tag" href={`/tasks?tag=${encodeURIComponent(tag)}`} title="이 태그만 보기">{tag}</Chip>
         ))}

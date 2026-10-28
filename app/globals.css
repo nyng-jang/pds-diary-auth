@@ -203,3 +203,26 @@ dl.compact { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14p
 dl.compact dt { color: var(--muted); } dl.compact dd { margin: 0; overflow-wrap: anywhere; }
 
 .danger-zone { border: 1px dashed var(--warn-line); border-radius: 14px; padding: 14px 16px; background: var(--card); }
+
+/* ── 실제로 한 일 (카드 3) ───────────────────────── */
+:root { --do-bg: #ece4ff; --do-fg: #5b3cc4; }
+@media (prefers-color-scheme: dark) { :root { --do-bg: #2f2552; --do-fg: #c7b6ff; } }
+.flow[data-kind='do'] { --tab-bg: var(--do-bg); --tab-fg: var(--do-fg); }
+.flow[data-kind='do'] .flow-title .icon { color: var(--do-fg); }
+.steps [data-kind='see'] { background: var(--do-bg); color: var(--do-fg); }
+.quote-warn { background: var(--soon-bg); border-color: var(--soon-line); }
+.log-facts strong { font-weight: 700; }
+.log-grid { margin-bottom: 24px; }
+/* 계획 값과 실제 값을 나란히 */
+.plan-vs-do { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 18px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.plan-vs-do p { margin: 0; }
+@media (max-width: 520px) { .plan-vs-do { grid-template-columns: 1fr; } }
+/* 돌아보기 집계 숫자 (누르면 그 기록으로) */
+.stats { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stats a { display: grid; gap: 2px; text-decoration: none; color: var(--fg); background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; }
+.stats a:hover { border-color: var(--muted); }
+.stat-label { font-size: .85rem; color: var(--muted); font-weight: 600; }
+.stats strong { font-size: 1.6rem; line-height: 1.2; }
+.plain-list { padding-left: 20px; margin: 0; display: grid; gap: 6px; }
