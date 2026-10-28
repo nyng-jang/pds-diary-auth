@@ -7,13 +7,19 @@ import {
   STATUSES, completeTask, deleteTask, getTask, insertTask, parseTaskForm, reopenTask, updateTask,
 } from '@/lib/tasks';
 import { insertLog, parseLogForm } from '@/lib/logs';
+import { carryNoteToPlan, getNote, getReviewByPlan, insertNote, parseNoteForm, sumRows } from '@/lib/review';
 
 export async function createPlanAction(_prev, formData) {
   const { plan, error } = parsePlanForm(formData, { requireNote: false });
   if (error) return { error };
+  // 돌아보기에서 "새 계획으로" 넘긴 고칠 점이 있으면 이 계획에 붙인다
+  const noteId = Number(formData.get('carry_note_id'));
+  const note = Number.isSafeInteger(noteId) && noteId > 0 ? await getNote(noteId) : null;
   const id = await insertPlan(plan);
+  const carried = note && !note.next_plan_id && (await carryNoteToPlan(note.id, id));
   revalidatePath('/');
-  redirect(`/plans/${id}`);
+  revalidatePath('/review');
+  redirect(carried ? `/plans/${id}?carried=${note.id}#carried` : `/plans/${id}`);
 }
 
 export async function updatePlanAction(_prev, formData) {
@@ -106,4 +112,26 @@ export async function createLogAction(_prev, formData) {
   revalidatePath('/tasks');
   revalidatePath('/review');
   redirect(`/tasks/${log.task_id}?logged=1#logs`);
+}
+
+// ---- 돌아보기 → 다음 계획 (카드 4) ----
+
+// 고칠 점 한 줄을 저장하고 고른 계획으로 넘긴다. 근거 숫자(snapshot)는 화면 값이 아니라 서버에서 다시 센다.
+export async function createNoteAction(_prev, formData) {
+  const { note, error } = parseNoteForm(formData);
+  if (error) return { error };
+  if (note.basis_plan_id && !(await getPlan(note.basis_plan_id))) return { error: '근거로 본 계획을 찾을 수 없어요.' };
+  if (note.next_plan_id && !(await getPlan(note.next_plan_id))) return { error: '넘길 계획을 찾을 수 없어요.' };
+
+  const rows = await getReviewByPlan({ from: note.from, to: note.to });
+  const basis = note.basis_plan_id ? rows.find((r) => Number(r.plan_id) === note.basis_plan_id) : sumRows(rows);
+  const { plan_id: _p, plan_title: _t, ...numbers } = basis;
+  const saved = await insertNote({ ...note, snapshot: { ...numbers, period_from: note.from, period_to: note.to } });
+
+  revalidatePath('/review');
+  if (saved.next_plan_id) {
+    revalidatePath(`/plans/${saved.next_plan_id}`);
+    redirect(`/plans/${saved.next_plan_id}?carried=${saved.id}#carried`);
+  }
+  redirect(`/?carry=${saved.id}#new-plan`);
 }

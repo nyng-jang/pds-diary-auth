@@ -2,12 +2,13 @@ import Link from 'next/link';
 import Icon from './Icon';
 
 // 워크플로 카드: 위에 작은 색 라벨 탭, 그 아래 흰 카드(아이콘+제목+⋯ 메뉴, 칩, 아래 메타 칩).
-// kind: plan(노랑) · todo(파랑) · done(초록) · do(보라, 실행 기록)
+// kind: plan(노랑) · todo(파랑) · done(초록) · do(보라, 실행 기록) · see(보라, 돌아보기에서 정한 고칠 점)
 const TABS = {
   plan: { icon: 'bolt', text: '계획' },
   todo: { icon: 'play', text: '할 일' },
   done: { icon: 'check', text: '완료' },
   do: { icon: 'clock', text: '실제로 한 일' },
+  see: { icon: 'sparkle', text: '돌아보기' },
 };
 
 export default function FlowCard({ kind, tab, icon, title, href, titleAs: H = 'h2', menu, children, meta, className = '', ...rest }) {
