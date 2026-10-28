@@ -15,6 +15,9 @@ const PATHS = {
   folder: 'M3 6h6l2 2h10v11H3z',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm9 3-4.3-4.3',
   sparkle: 'M12 3v4m0 10v4M3 12h4m10 0h4M6 6l2.5 2.5m7 7L18 18M6 18l2.5-2.5m7-7L18 6',
+  ban: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM5.6 5.6l12.8 12.8',
+  chevron: 'M6 9l6 6 6-6',
+  timer: 'M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-12v4l2 2M9 2h6',
   note: 'M5 4h14v16H5zM9 9h6M9 13h6M9 17h3',
 };
 
