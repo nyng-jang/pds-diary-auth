@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import NoLoginNotice from '@/components/NoLoginNotice';
+import PromptBox from '@/components/PromptBox';
+import TaskCard from '@/components/TaskCard';
 import TaskForm from '@/components/TaskForm';
-import TaskStatusButton from '@/components/TaskStatusButton';
 import { createTaskAction } from '@/app/actions';
 import { PRIORITIES } from '@/lib/plans';
 import {
   DUE_FILTERS, SORTS, STATUSES, countTasks, listPlanOptions, listTags, listTasks, parseTaskQuery,
 } from '@/lib/tasks';
-import { formatDue, formatMinutes, todaySeoul } from '@/lib/format';
+import { todaySeoul } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,68 +50,77 @@ export default async function TasksPage({ searchParams }) {
   return (
     <>
       <NoLoginNotice />
-      <p><Link href="/">← 내 계획</Link></p>
-      <section>
-        <h1>할 일</h1>
+      <section aria-labelledby="tasks-h">
+        <div className="page-head">
+          <h1 id="tasks-h">할 일</h1>
+          <ol className="steps" aria-label="다이어리 흐름">
+            <li data-kind="plan"><Link href="/">계획</Link></li>
+            <li data-kind="todo">할 일</li>
+            <li data-kind="see">돌아보기 <small>(곧)</small></li>
+          </ol>
+        </div>
         {notice && <p className="ok" role="status">{String(notice)}</p>}
 
-        <form method="get" action="/tasks" className="filters" role="search">
-          <label className="wide">
-            검색 <small>(할 일 이름·메모·태그)</small>
-            <input type="search" name="q" defaultValue={f.q} maxLength={50} placeholder="예: 모의고사" />
-          </label>
-          <label>
-            계획
-            <select name="plan" defaultValue={f.plan ?? ''}>
-              <option value="">전체</option>
-              {plans.map((p) => <option key={p.id} value={p.id}>#{p.id} {p.title}</option>)}
-            </select>
-          </label>
-          <label>
-            상태
-            <select name="status" defaultValue={f.status}>
-              <option value="">전체</option>
-              {STATUSES.map((s) => <option key={s}>{s}</option>)}
-            </select>
-          </label>
-          <label>
-            우선순위
-            <select name="priority" defaultValue={f.priority}>
-              <option value="">전체</option>
-              {PRIORITIES.map((s) => <option key={s}>{s}</option>)}
-            </select>
-          </label>
-          <label>
-            태그
-            <select name="tag" defaultValue={f.tag}>
-              <option value="">전체</option>
-              {tags.map((t) => <option key={t.tag} value={t.tag}>#{t.tag} ({t.n})</option>)}
-            </select>
-          </label>
-          <label>
-            마감
-            <select name="due" defaultValue={f.due}>
-              <option value="">전체</option>
-              {Object.entries(DUE_FILTERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </label>
-          <label>
-            정렬
-            <select name="sort" defaultValue={f.sort}>
-              {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
-            </select>
-          </label>
-          <div className="filter-actions">
-            <button type="submit">적용</button>
-            <Link href="/tasks">조건 지우기</Link>
-          </div>
-        </form>
-
-        <div className="sort-rule" id="sort-rule">
-          <strong>정렬 기준 — {sort.name}:</strong> {sort.label}
-          <br />
-          <span className="muted">검색·거르기·정렬은 모두 서버의 데이터베이스에서 처리해요. 같은 조건이면 언제 열어도 같은 순서예요.</span>
-        </div>
+        <PromptBox title="할 일 찾기" icon="search" stateText={`전체 ${total}개 중 ${tasks.length}개`}>
+          <form method="get" action="/tasks" className="pform" role="search">
+            <label className="pform-main">
+              <span>검색 <small>(할 일 이름·메모·태그)</small></span>
+              <input type="search" name="q" defaultValue={f.q} maxLength={50} placeholder="예: 모의고사" />
+            </label>
+            <div className="pform-context">
+              <label className="pill-field">
+                <span>계획</span>
+                <select name="plan" defaultValue={f.plan ?? ''}>
+                  <option value="">전체</option>
+                  {plans.map((p) => <option key={p.id} value={p.id}>#{p.id} {p.title}</option>)}
+                </select>
+              </label>
+              <label className="pill-field">
+                <span>상태</span>
+                <select name="status" defaultValue={f.status}>
+                  <option value="">전체</option>
+                  {STATUSES.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </label>
+              <label className="pill-field">
+                <span>우선순위</span>
+                <select name="priority" defaultValue={f.priority}>
+                  <option value="">전체</option>
+                  {PRIORITIES.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </label>
+              <label className="pill-field">
+                <span>태그</span>
+                <select name="tag" defaultValue={f.tag}>
+                  <option value="">전체</option>
+                  {tags.map((t) => <option key={t.tag} value={t.tag}>#{t.tag} ({t.n})</option>)}
+                </select>
+              </label>
+              <label className="pill-field">
+                <span>마감</span>
+                <select name="due" defaultValue={f.due}>
+                  <option value="">전체</option>
+                  {Object.entries(DUE_FILTERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </label>
+              <label className="pill-field">
+                <span>정렬</span>
+                <select name="sort" defaultValue={f.sort}>
+                  {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
+                </select>
+              </label>
+            </div>
+            <p className="sort-rule" id="sort-rule">
+              <strong>정렬 기준 — {sort.name}:</strong> {sort.label}
+              <br />
+              <span className="muted">검색·거르기·정렬은 모두 서버의 데이터베이스에서 처리해요. 같은 조건이면 언제 열어도 같은 순서예요.</span>
+            </p>
+            <div className="pform-foot">
+              <Link href="/tasks">조건 지우기</Link>
+              <button type="submit" className="send">적용</button>
+            </div>
+          </form>
+        </PromptBox>
 
         <p className="count">
           전체 {total}개 중 <strong>{tasks.length}개</strong> 보는 중
@@ -122,46 +132,18 @@ export default async function TasksPage({ searchParams }) {
             {filtered ? '조건에 맞는 할 일이 없어요. 조건을 바꾸거나 지워 보세요.' : '아직 할 일이 없어요. 아래에서 첫 할 일을 만들어 보세요.'}
           </p>
         )}
-        <ol className="tasks">
-          {tasks.map((t, i) => {
-            const due = formatDue(t.due_date, t.status, today);
-            return (
-              <li key={t.id} id={`task-${t.id}`} className={`card task ${t.status === '완료' ? 'is-done' : ''}`}>
-                <div className="card-head">
-                  <span className="rank" title="정렬 순서">{i + 1}</span>
-                  <span className={`status st-${t.status === '완료' ? 'done' : 'open'}`}>{t.status}</span>
-                  <span className={`pri pri-${t.priority}`}>{t.priority}</span>
-                  <span className="id">#{t.id}</span>
-                  <Link className="area" href={`/tasks?plan=${t.plan_id}`}>계획 #{t.plan_id} {t.plan_title}</Link>
-                </div>
-                <h2><Link href={`/tasks/${t.id}`}>{t.title}</Link></h2>
-                <dl>
-                  <dt>마감일</dt><dd className={`due-${due.tone}`}>{due.text}</dd>
-                  <dt>예상 시간</dt><dd>{formatMinutes(t.estimated_minutes)}</dd>
-                  <dt>태그</dt>
-                  <dd>
-                    {t.tags.length === 0 ? <span className="muted">(없음)</span> : t.tags.map((tag) => (
-                      <Link key={tag} href={`/tasks?tag=${encodeURIComponent(tag)}`} className="tag">#{tag}</Link>
-                    ))}
-                  </dd>
-                  {t.note && <><dt>메모</dt><dd>{t.note}</dd></>}
-                </dl>
-                <div className="task-actions">
-                  <TaskStatusButton task={t} back={back} />
-                  <Link href={`/tasks/${t.id}`}>고치기·지우기</Link>
-                </div>
-              </li>
-            );
-          })}
+        <ol className="flow-grid" aria-label="할 일 목록">
+          {tasks.map((t, i) => (
+            <li key={t.id}><TaskCard task={t} today={today} rank={i + 1} back={back} /></li>
+          ))}
         </ol>
       </section>
 
       <section id="new">
-        <h2>새 할 일 만들기</h2>
         {plans.length === 0 ? (
           <p className="muted">할 일은 계획에 딸려요. <Link href="/">먼저 계획을 세워 주세요.</Link></p>
         ) : (
-          <TaskForm action={createTaskAction} plans={plans} defaultPlanId={f.plan ?? undefined} submitLabel="할 일 저장" />
+          <TaskForm action={createTaskAction} plans={plans} defaultPlanId={f.plan ?? undefined} heading="새 할 일 만들기" submitLabel="할 일 저장" />
         )}
       </section>
     </>

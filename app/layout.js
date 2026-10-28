@@ -11,8 +11,8 @@ export default function RootLayout({ children }) {
     <html lang="ko">
       <body>
         <header className="top">
-          <Link href="/" className="brand">플랜두씨 다이어리</Link>
-          <nav className="nav">
+          <Link href="/" className="brand"><span className="brand-mark">P·D·S</span>플랜두씨 다이어리</Link>
+          <nav className="nav" aria-label="주 메뉴">
             <Link href="/">계획</Link>
             <Link href="/tasks">할 일</Link>
           </nav>
