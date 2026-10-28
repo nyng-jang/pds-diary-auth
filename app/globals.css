@@ -347,3 +347,11 @@ main:has(.review-head), main:has(.evidence-table) { max-width: 1080px; }
 .review-table th, .review-table td { padding: 12px 10px; }
 .review-table th:first-child, .review-table td:first-child { padding-left: 16px; }
 .review-table th:last-child, .review-table td:last-child { padding-right: 16px; }
+
+/* 내 자료 내보내기 (카드 5) */
+.export { margin-top: 32px; border-top: 1px solid var(--line); padding-top: 18px; }
+.export h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.export p { margin: 0 0 12px; }
+.export-link { display: inline-block; background: var(--send); color: var(--send-fg); text-decoration: none; font-weight: 600;
+  border-radius: 10px; padding: 8px 14px; }
+.export-link:hover { filter: brightness(1.1); }

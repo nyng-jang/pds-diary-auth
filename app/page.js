@@ -64,6 +64,14 @@ export default async function Home({ searchParams }) {
         )}
         <PlanForm key={carryNote?.id ?? 0} action={createPlanAction} heading="새 계획 세우기" submitLabel="계획 저장" carryNote={carryNote} />
       </section>
+      <section className="export" aria-labelledby="export-h">
+        <h2 id="export-h">내 자료 내보내기</h2>
+        <p className="muted">
+          계획·수정 이력·할 일·실행 기록·완료 기록·고칠 점을 JSON 파일 하나로 내려받아요.
+          시각은 한국 시간(+09:00), 시간은 분 단위예요. 항목 설명은 소스의 <code>contracts/pds-schema-v2.json</code>에 있어요.
+        </p>
+        <a className="export-link" href="/api/export" download>내 자료 전체 내려받기 (.json)</a>
+      </section>
     </>
   );
 }
