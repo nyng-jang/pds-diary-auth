@@ -14,6 +14,7 @@ export default async function Home() {
       <NoLoginNotice />
       <section>
         <h1>내 계획</h1>
+        <p><Link href="/tasks">계획에 딸린 할 일 보기 →</Link></p>
         {plans.length === 0 && <p className="muted">아직 계획이 없어요. 아래에서 첫 계획을 세워 보세요.</p>}
         <ul className="plans">
           {plans.map((p) => (

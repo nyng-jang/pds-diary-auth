@@ -38,6 +38,8 @@ export default async function PlanPage({ params, searchParams }) {
         </dl>
       </section>
 
+      <p><Link href={`/tasks?plan=${plan.id}`}>이 계획의 할 일 보기 →</Link></p>
+
       <section>
         <h2>수정 이력</h2>
         <p className="muted">계획을 고칠 때마다 그때의 내용이 한 줄씩 쌓여요. v1이 처음 세운 계획이에요.</p>

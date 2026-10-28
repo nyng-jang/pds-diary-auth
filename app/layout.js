@@ -12,6 +12,10 @@ export default function RootLayout({ children }) {
       <body>
         <header className="top">
           <Link href="/" className="brand">플랜두씨 다이어리</Link>
+          <nav className="nav">
+            <Link href="/">계획</Link>
+            <Link href="/tasks">할 일</Link>
+          </nav>
         </header>
         <main>{children}</main>
       </body>

@@ -34,8 +34,9 @@ export async function GET() {
   if (!conn.env) return Response.json({ ok: false, code: 'NO_URL', hint: HINTS.NO_URL, conn }, { status: 500 });
   try {
     await ensureSchema();
-    const [{ plans }] = await db()`select count(*)::int as plans from plans`;
-    return Response.json({ ok: true, conn, plans });
+    const [{ plans, tasks }] = await db()`
+      select (select count(*)::int from plans) as plans, (select count(*)::int from tasks) as tasks`;
+    return Response.json({ ok: true, conn, plans, tasks });
   } catch (e) {
     const code = e?.code ?? 'UNKNOWN';
     return Response.json(
