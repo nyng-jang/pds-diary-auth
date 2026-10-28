@@ -40,7 +40,7 @@ export async function updatePlanAction(_prev, formData) {
 // 목록에서 누른 버튼은 보던 화면(검색·거르기·정렬 그대로)으로 돌아간다. /tasks 아래만 허용한다.
 function backTo(formData, fallback) {
   const back = String(formData.get('back') ?? '');
-  return /^\/tasks(\/\d+)?(\?[^#\\]*)?$/.test(back) ? back : fallback;
+  return /^(\/tasks(\/\d+)?(\?[^#\\]*)?|\/plans\/\d+)$/.test(back) ? back : fallback;
 }
 
 function withNotice(url, key, id) {

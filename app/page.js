@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import FlowCard, { Chip, Meta } from '@/components/FlowCard';
 import NoLoginNotice from '@/components/NoLoginNotice';
 import PlanForm from '@/components/PlanForm';
 import { createPlanAction } from './actions';
@@ -12,34 +13,47 @@ export default async function Home() {
   return (
     <>
       <NoLoginNotice />
-      <section>
-        <h1>내 계획</h1>
-        <p><Link href="/tasks">계획에 딸린 할 일 보기 →</Link></p>
+      <section aria-labelledby="plans-h">
+        <div className="page-head">
+          <h1 id="plans-h">내 계획</h1>
+          <ol className="steps" aria-label="다이어리 흐름">
+            <li data-kind="plan">계획</li>
+            <li data-kind="todo"><Link href="/tasks">할 일</Link></li>
+            <li data-kind="see">돌아보기 <small>(곧)</small></li>
+          </ol>
+        </div>
         {plans.length === 0 && <p className="muted">아직 계획이 없어요. 아래에서 첫 계획을 세워 보세요.</p>}
-        <ul className="plans">
+        <div className="flow-grid">
           {plans.map((p) => (
-            <li key={p.id}>
-              <Link href={`/plans/${p.id}`} className="card">
-                <div className="card-head">
-                  <span className={`pri pri-${p.priority}`}>{p.priority}</span>
-                  <span className="area">{p.area}</span>
-                  <span className="id">#{p.id}</span>
-                  {p.version > 1 && <span className="ver">{p.version - 1}번 고침</span>}
-                </div>
-                <h2>{p.title}</h2>
-                <dl>
-                  <dt>기간</dt><dd>{formatPeriod(p)}</dd>
-                  <dt>성공 기준</dt><dd>{p.success_criteria}</dd>
-                  <dt>예상 시간</dt><dd>{formatEstimate(p)}</dd>
-                </dl>
-              </Link>
-            </li>
+            <FlowCard
+              key={p.id}
+              kind="plan"
+              icon="target"
+              title={p.title}
+              href={`/plans/${p.id}`}
+              menu={[
+                { href: `/plans/${p.id}`, label: '자세히 · 수정 이력' },
+                { href: `/tasks?plan=${p.id}`, label: '이 계획의 할 일' },
+                { href: `/plans/${p.id}#edit`, label: '계획 고치기' },
+              ]}
+              meta={<>
+                <Meta>#{p.id}</Meta>
+                <Meta icon="folder">{p.area}</Meta>
+                {p.version > 1 && <Meta icon="history">{p.version - 1}번 고침</Meta>}
+              </>}
+            >
+              <p className="quote"><span className="quote-label">성공 기준</span>{p.success_criteria}</p>
+              <div className="chips">
+                <Chip icon="flag" tone={`pri-${p.priority}`}>우선순위 {p.priority}</Chip>
+                <Chip icon="calendar">{formatPeriod(p)}</Chip>
+                <Chip icon="clock">{formatEstimate(p)}</Chip>
+              </div>
+            </FlowCard>
           ))}
-        </ul>
+        </div>
       </section>
       <section>
-        <h2>새 계획 세우기</h2>
-        <PlanForm action={createPlanAction} submitLabel="계획 저장" />
+        <PlanForm action={createPlanAction} heading="새 계획 세우기" submitLabel="계획 저장" />
       </section>
     </>
   );
