@@ -19,7 +19,7 @@ export default async function Home() {
           <ol className="steps" aria-label="다이어리 흐름">
             <li data-kind="plan">계획</li>
             <li data-kind="todo"><Link href="/tasks">할 일</Link></li>
-            <li data-kind="see">돌아보기 <small>(곧)</small></li>
+            <li data-kind="see"><Link href="/review">돌아보기</Link></li>
           </ol>
         </div>
         {plans.length === 0 && <p className="muted">아직 계획이 없어요. 아래에서 첫 계획을 세워 보세요.</p>}

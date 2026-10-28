@@ -4,8 +4,9 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getPlan, insertPlan, parsePlanForm, samePlanContent, updatePlan } from '@/lib/plans';
 import {
-  STATUSES, deleteTask, insertTask, parseTaskForm, setTaskStatus, updateTask,
+  STATUSES, completeTask, deleteTask, getTask, insertTask, parseTaskForm, reopenTask, updateTask,
 } from '@/lib/tasks';
+import { insertLog, parseLogForm } from '@/lib/logs';
 
 export async function createPlanAction(_prev, formData) {
   const { plan, error } = parsePlanForm(formData, { requireNote: false });
@@ -67,14 +68,23 @@ export async function updateTaskAction(_prev, formData) {
   redirect(`/tasks/${id}?saved=1`);
 }
 
+// 완료는 폼에 담긴 요청 키(request_key)로 한 번만 기록된다. 연달아 두 번 눌러 같은 키가 두 번 와도
+// 두 번째는 데이터베이스가 받지 않고, 둘 다 같은 화면으로 돌아간다.
 export async function setTaskStatusAction(formData) {
   const id = Number(formData.get('id'));
   const status = String(formData.get('status'));
+  const key = String(formData.get('request_key') ?? '');
   if (!Number.isSafeInteger(id) || !STATUSES.includes(status)) return;
-  await setTaskStatus(id, status);
+  if (status === '완료') {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) return;
+    await completeTask(id, key);
+  } else {
+    await reopenTask(id);
+  }
   revalidatePath('/tasks');
-  const key = status === '완료' ? 'done' : 'reopened';
-  redirect(withNotice(backTo(formData, `/tasks/${id}`), key, id));
+  revalidatePath('/review');
+  const notice = status === '완료' ? 'done' : 'reopened';
+  redirect(withNotice(backTo(formData, `/tasks/${id}`), notice, id));
 }
 
 export async function deleteTaskAction(formData) {
@@ -83,4 +93,17 @@ export async function deleteTaskAction(formData) {
   await deleteTask(id);
   revalidatePath('/tasks');
   redirect(`/tasks?deleted=${id}`);
+}
+
+// ---- 실제로 한 일 (카드 3) ----
+
+export async function createLogAction(_prev, formData) {
+  const { log, error } = parseLogForm(formData);
+  if (error) return { error };
+  if (!(await getTask(log.task_id))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
+  // 같은 요청이 두 번 와서 이미 들어가 있으면 그대로 두고 같은 화면으로 간다
+  await insertLog(log);
+  revalidatePath('/tasks');
+  revalidatePath('/review');
+  redirect(`/tasks/${log.task_id}?logged=1#logs`);
 }

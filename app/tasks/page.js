@@ -56,7 +56,7 @@ export default async function TasksPage({ searchParams }) {
           <ol className="steps" aria-label="다이어리 흐름">
             <li data-kind="plan"><Link href="/">계획</Link></li>
             <li data-kind="todo">할 일</li>
-            <li data-kind="see">돌아보기 <small>(곧)</small></li>
+            <li data-kind="see"><Link href="/review">돌아보기</Link></li>
           </ol>
         </div>
         {notice && <p className="ok" role="status">{String(notice)}</p>}
