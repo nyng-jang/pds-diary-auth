@@ -125,9 +125,9 @@ a.chip:hover { border-color: var(--muted); }
 
 /* 카드 안의 넓은 버튼 (레퍼런스의 "Connect … Account" 자리) */
 .status-form { margin: 0; }
-button.wide-btn { width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--card); color: var(--fg);
+button.wide-btn, summary.wide-btn { width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--card); color: var(--fg);
   border: 1px solid var(--line); box-shadow: 0 1px 1px rgb(0 0 0 / .04); padding: 7px 12px; font-weight: 600; }
-button.wide-btn:hover { background: var(--chip); }
+button.wide-btn:hover, summary.wide-btn:hover { background: var(--chip); }
 .flow[data-kind='todo'] button.wide-btn .icon { color: var(--done-fg); }
 
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 0; font-size: .92rem; }
@@ -347,3 +347,24 @@ main:has(.review-head), main:has(.evidence-table) { max-width: 1080px; }
 .review-table th, .review-table td { padding: 12px 10px; }
 .review-table th:first-child, .review-table td:first-child { padding-left: 16px; }
 .review-table th:last-child, .review-table td:last-child { padding-right: 16px; }
+
+/* 내 자료 내보내기 (카드 5) */
+.export { margin-top: 32px; border-top: 1px solid var(--line); padding-top: 18px; }
+.export h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.export p { margin: 0 0 12px; }
+.export-link { display: inline-block; background: var(--send); color: var(--send-fg); text-decoration: none; font-weight: 600;
+  border-radius: 10px; padding: 8px 14px; }
+.export-link:hover { filter: brightness(1.1); }
+
+/* 할 일 카드 안에서 바로 실제로 한 일 적기 (카드 5) */
+.do-panel > summary { list-style: none; cursor: pointer; border-radius: 10px; }
+.do-panel > summary::-webkit-details-marker { display: none; }
+.do-panel .do-chevron { position: absolute; right: 12px; transition: transform .15s; color: var(--muted); }
+.do-panel[open] .do-chevron { transform: rotate(180deg); }
+.do-panel > summary .icon:first-child { color: var(--done-fg); }
+.do-form { margin-top: 10px; padding: 12px; background: var(--chip); border: 1px solid var(--chip-line); border-radius: 10px; gap: 10px; }
+.do-form .pform-fields { grid-template-columns: 1fr; }
+.do-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; }
+button.link-btn { background: none; border: 0; padding: 4px 2px; color: var(--muted); text-decoration: underline; font-weight: 600; cursor: pointer; }
+.tasks-new { margin-bottom: 28px; }
+.do-panel > summary.wide-btn { position: relative; }

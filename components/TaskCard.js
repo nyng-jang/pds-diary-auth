@@ -1,5 +1,6 @@
 import FlowCard, { Chip, Meta } from './FlowCard';
 import TaskStatusButton from './TaskStatusButton';
+import TaskDoPanel from './TaskDoPanel';
 import { formatDue, formatMinutes } from '@/lib/format';
 
 // 할 일 하나를 워크플로 카드로 보여 준다. 진행 중은 파란 탭, 완료는 초록 탭.
@@ -47,7 +48,12 @@ export default function TaskCard({ task: t, today, rank, back, titleAs, full = f
           {full.completed && <><dt>완료한 때</dt><dd>{full.completed}</dd></>}
         </dl>
       )}
-      <TaskStatusButton task={t} back={back} />
+      {/* 목록 카드에서는 바로 실제로 한 일을 적는다. 할 일 화면(full)에는 아래에 큰 기록 폼이 따로 있다. */}
+      {!full && (
+        <TaskDoPanel taskId={t.id} done={done} estimated={t.estimated_minutes} back={back}
+          logKey={crypto.randomUUID()} doneKey={done ? undefined : crypto.randomUUID()} />
+      )}
+      {(full || done) && <TaskStatusButton task={t} back={back} />}
     </FlowCard>
   );
 }

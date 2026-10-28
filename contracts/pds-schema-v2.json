@@ -1,0 +1,162 @@
+{
+  "name": "plan-do-see-diary",
+  "schema_version": 2,
+  "description": "플랜두씨 다이어리의 최종 데이터베이스 계약. 계획(Plan) → 할 일 → 실제로 한 일(Do) → 돌아보기(See). 원본 SQL은 db/001_plans.sql ~ db/004_reviews.sql 이고, 이 파일은 그 SQL과 같은 내용을 사람이 읽기 쉽게 옮긴 것이다.",
+  "database": "PostgreSQL (Supabase, 서울 리전). 앱 서버(Vercel icn1)만 DATABASE_URL로 읽고 쓴다. 모든 표에 RLS를 켜고 정책을 두지 않아 브라우저용 공개 키로는 읽거나 쓸 수 없다.",
+  "rules": {
+    "ids": "모든 표의 id는 bigint generated always as identity. 처음 저장할 때 DB가 정하고 바뀌지 않는다(plans·tasks는 트리거가 id를 되돌린다). 지운 번호는 다시 쓰지 않는다.",
+    "dates": {
+      "date": "날짜만 있는 항목(start_date, end_date, due_date, period_from, period_to)은 PostgreSQL date. 시간대가 없는 한국(Asia/Seoul) 달력 날짜이고, 입력·저장·화면·내보내기 모두 YYYY-MM-DD 문자열 그대로다.",
+      "timestamptz": "시각 항목(*_at)은 timestamptz. DB 안에는 절대 시각(UTC 기준)으로 저장된다. 화면은 Asia/Seoul로 보여 주고, 내보내기 파일은 +09:00 오프셋을 붙인 ISO 8601(예: 2026-10-28T09:10:00+09:00)로 쓴다.",
+      "input": "실행 기록의 시작·끝은 브라우저의 datetime-local 값(시간대 없음)을 한국 시간으로 보고 저장한다: value::timestamp at time zone 'Asia/Seoul'.",
+      "today": "'오늘'은 항상 서울 기준이다: (now() at time zone 'Asia/Seoul')::date. 지연 판정(마감일 < 오늘)과 기간 거르기에 쓴다.",
+      "review_basis_date": "돌아보기에서 할 일이 어느 날에 속하는지: 마감일, 마감일이 없으면 만든 날(서울)."
+    },
+    "units": {
+      "minutes": "시간 길이는 모두 정수 분(minute). plans.estimated_minutes, tasks.estimated_minutes, task_logs.actual_minutes 모두 분으로 저장하고, 화면에서만 '1시간 20분'처럼 바꿔 보여 준다. 내보내기 파일도 분 그대로다.",
+      "plans.estimate_basis": "plans.estimated_minutes가 하루 기준(per_day)인지 기간 전체 기준(total)인지."
+    },
+    "text": "사용자가 적은 글자는 그대로 저장하고 화면에서는 React가 글자로만 넣는다(HTML로 해석하지 않음). <script> 같은 글자도 실행되지 않고 그대로 보인다.",
+    "append_only": "plan_revisions·task_logs는 쌓기만 한다. plans·review_notes는 지울 수 없다. task_completions는 reopened_at을, review_notes는 next_plan_id를 한 번 적는 것만 된다. 모두 DB 트리거로 막는다.",
+    "idempotency": "task_logs·task_completions·review_notes의 request_key(uuid, unique)로 같은 저장 요청이 두 번 와도 한 건만 들어간다. 할 일마다 되돌리지 않은 완료는 하나뿐이다(부분 unique 인덱스)."
+  },
+  "tables": {
+    "plans": {
+      "description": "계획의 지금 값.",
+      "source": "db/001_plans.sql",
+      "delete": "불가 (트리거 plans_no_delete)",
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "title": { "type": "text", "required": true, "check": "공백만은 안 됨" },
+        "area": { "type": "text", "required": true, "note": "운동·공부·업무·ALEPH·생활 등" },
+        "start_date": { "type": "date", "required": true },
+        "end_date": { "type": "date", "nullable": true, "note": "null = 끝 없이 계속", "check": "end_date >= start_date" },
+        "priority": { "type": "text", "enum": ["높음", "보통", "낮음"] },
+        "success_criteria": { "type": "text", "required": true },
+        "estimated_minutes": { "type": "integer", "unit": "minute", "check": "> 0" },
+        "estimate_basis": { "type": "text", "enum": ["per_day", "total"], "default": "per_day" },
+        "change_note": { "type": "text", "nullable": true, "note": "이 버전을 만든 이유" },
+        "version": { "type": "integer", "default": 1, "note": "고칠 때마다 트리거가 +1" },
+        "created_at": { "type": "timestamptz", "default": "now()" },
+        "updated_at": { "type": "timestamptz", "default": "now()" }
+      }
+    },
+    "plan_revisions": {
+      "description": "계획의 모든 버전. version 1이 처음 세운 계획. 계획을 만들거나 고칠 때 트리거가 한 줄씩 쌓는다.",
+      "source": "db/001_plans.sql",
+      "delete": "불가, 고치기도 불가",
+      "unique": [["plan_id", "version"]],
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "plan_id": { "type": "bigint", "references": "plans.id", "on_delete": "restrict" },
+        "version": { "type": "integer" },
+        "title": { "type": "text" },
+        "area": { "type": "text" },
+        "start_date": { "type": "date" },
+        "end_date": { "type": "date", "nullable": true },
+        "priority": { "type": "text" },
+        "success_criteria": { "type": "text" },
+        "estimated_minutes": { "type": "integer", "unit": "minute" },
+        "estimate_basis": { "type": "text" },
+        "change_note": { "type": "text", "nullable": true },
+        "saved_at": { "type": "timestamptz", "default": "now()" }
+      }
+    },
+    "tasks": {
+      "description": "계획에 딸린 할 일.",
+      "source": "db/002_tasks.sql",
+      "delete": "가능. 지우면 그 할 일의 task_logs·task_completions도 함께 지워진다(cascade).",
+      "check": "(status = '완료') = (completed_at is not null)",
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "plan_id": { "type": "bigint", "references": "plans.id", "on_delete": "restrict" },
+        "title": { "type": "text", "check": "1~100자" },
+        "note": { "type": "text", "default": "", "check": "500자 이하" },
+        "due_date": { "type": "date", "nullable": true, "note": "null = 마감 없음" },
+        "priority": { "type": "text", "enum": ["높음", "보통", "낮음"] },
+        "tags": { "type": "text[]", "default": "{}", "check": "10개 이하" },
+        "estimated_minutes": { "type": "integer", "unit": "minute", "check": "1~10000" },
+        "status": { "type": "text", "enum": ["진행 중", "완료"], "default": "진행 중" },
+        "completed_at": { "type": "timestamptz", "nullable": true },
+        "created_at": { "type": "timestamptz", "default": "now()" },
+        "updated_at": { "type": "timestamptz", "default": "now()" }
+      }
+    },
+    "task_logs": {
+      "description": "실제로 한 일(실행 기록). 할 일·계획과 다른 표라 기록을 남겨도 계획 값은 그대로다.",
+      "source": "db/003_logs.sql",
+      "delete": "직접은 불가, 고치기도 불가. 할 일을 지우면 함께 지워진다.",
+      "check": [
+        "ended_at > started_at",
+        "ended_at - started_at <= 24시간",
+        "1 <= actual_minutes <= 시작~끝 분(올림). 쉰 시간을 빼면 시작~끝보다 짧을 수 있다."
+      ],
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "task_id": { "type": "bigint", "references": "tasks.id", "on_delete": "cascade" },
+        "request_key": { "type": "uuid", "unique": true },
+        "started_at": { "type": "timestamptz" },
+        "ended_at": { "type": "timestamptz" },
+        "actual_minutes": { "type": "integer", "unit": "minute" },
+        "blocker": { "type": "text", "default": "", "note": "'' = 막힌 곳 없음", "check": "500자 이하" },
+        "created_at": { "type": "timestamptz", "default": "now()" }
+      }
+    },
+    "task_completions": {
+      "description": "완료 기록. 돌아보기의 완료 근거. 진행 중으로 되돌리면 지우지 않고 reopened_at만 적는다.",
+      "source": "db/003_logs.sql",
+      "delete": "직접은 불가. 할 일을 지우면 함께 지워진다.",
+      "unique": [["request_key"], ["task_id (reopened_at is null 인 것만)"]],
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "task_id": { "type": "bigint", "references": "tasks.id", "on_delete": "cascade" },
+        "request_key": { "type": "uuid", "unique": true },
+        "completed_at": { "type": "timestamptz", "default": "now()" },
+        "reopened_at": { "type": "timestamptz", "nullable": true, "note": "null = 지금도 완료" }
+      }
+    },
+    "review_notes": {
+      "description": "돌아보기에서 정한 고칠 점 한 줄과, 그것을 넘긴 다음 계획.",
+      "source": "db/004_reviews.sql",
+      "delete": "불가. next_plan_id를 비어 있을 때 한 번 채우는 것만 된다.",
+      "check": ["period_from <= period_to", "(next_plan_id is null) = (carried_at is null)"],
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "request_key": { "type": "uuid", "unique": true },
+        "period_from": { "type": "date", "nullable": true, "note": "null = 처음부터" },
+        "period_to": { "type": "date", "nullable": true, "note": "null = 끝까지" },
+        "basis_plan_id": { "type": "bigint", "nullable": true, "references": "plans.id", "on_delete": "restrict", "note": "null = 모든 계획 합계" },
+        "lesson": { "type": "text", "check": "1~200자, 한 줄" },
+        "snapshot": { "type": "jsonb", "note": "정할 때 본 집계 숫자 그대로 (분 단위)" },
+        "next_plan_id": { "type": "bigint", "nullable": true, "references": "plans.id", "on_delete": "restrict" },
+        "carried_at": { "type": "timestamptz", "nullable": true },
+        "created_at": { "type": "timestamptz", "default": "now()" }
+      }
+    }
+  },
+  "relations": [
+    { "from": "plan_revisions.plan_id", "to": "plans.id", "cardinality": "계획 1 : 버전 N", "on_delete": "restrict" },
+    { "from": "tasks.plan_id", "to": "plans.id", "cardinality": "계획 1 : 할 일 N", "on_delete": "restrict" },
+    { "from": "task_logs.task_id", "to": "tasks.id", "cardinality": "할 일 1 : 실행 기록 N", "on_delete": "cascade" },
+    { "from": "task_completions.task_id", "to": "tasks.id", "cardinality": "할 일 1 : 완료 기록 N (열린 것은 최대 1)", "on_delete": "cascade" },
+    { "from": "review_notes.basis_plan_id", "to": "plans.id", "cardinality": "계획 1 : 고칠 점 N", "on_delete": "restrict" },
+    { "from": "review_notes.next_plan_id", "to": "plans.id", "cardinality": "계획 1 : 넘어온 고칠 점 N", "on_delete": "restrict" }
+  ],
+  "review_metrics": {
+    "source": "lib/review.js METRICS",
+    "planned": "기간 안의 지우지 않은 할 일 수",
+    "done": "그중 지금 완료 상태인 할 일 수",
+    "overdue": "완료 안 됐고 due_date < 서울 오늘인 할 일 수",
+    "blocked": "blocker가 하나라도 적힌 실행 기록이 있는 할 일 수",
+    "estimate": "tasks.estimated_minutes 합 (분)",
+    "actual": "task_logs.actual_minutes 합 (분)",
+    "diff": "actual - estimate (분)"
+  },
+  "export": {
+    "url": "/api/export",
+    "file": "pds-export-YYYYMMDD-HHMM.json (JSON 파일 하나)",
+    "shape": "{ format, schema, schema_version, exported_at, time_zone, units, counts, data: { plans, plan_revisions, tasks, task_logs, task_completions, review_notes } }",
+    "rows": "표마다 모든 열, id 오름차순. 한 번의 읽기 전용 트랜잭션에서 읽는다.",
+    "excluded": "DB 접속 주소·비밀번호 같은 설정값은 담지 않는다."
+  }
+}

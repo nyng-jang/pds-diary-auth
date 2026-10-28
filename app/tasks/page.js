@@ -43,6 +43,8 @@ export default async function TasksPage({ searchParams }) {
 
   const notice =
     (sp.created && `할 일 #${sp.created}을(를) 만들었어요.`) ||
+    (sp.logged_done && `할 일 #${sp.logged_done}의 실제로 한 일을 남기고 완료로 바꿨어요.`) ||
+    (sp.logged && `할 일 #${sp.logged}의 실제로 한 일을 남겼어요.`) ||
     (sp.done && `할 일 #${sp.done}을(를) 완료로 바꿨어요.`) ||
     (sp.reopened && `할 일 #${sp.reopened}을(를) 다시 진행 중으로 되돌렸어요.`) ||
     (sp.deleted && `할 일 #${sp.deleted}을(를) 지웠어요.`);
@@ -60,7 +62,17 @@ export default async function TasksPage({ searchParams }) {
           </ol>
         </div>
         {notice && <p className="ok" role="status">{String(notice)}</p>}
+      </section>
 
+      <section id="new" className="tasks-new">
+        {plans.length === 0 ? (
+          <p className="muted">할 일은 계획에 딸려요. <Link href="/">먼저 계획을 세워 주세요.</Link></p>
+        ) : (
+          <TaskForm action={createTaskAction} plans={plans} defaultPlanId={f.plan ?? undefined} heading="새 할 일 만들기" submitLabel="할 일 저장" />
+        )}
+      </section>
+
+      <section aria-label="할 일 찾기와 목록">
         <PromptBox title="할 일 찾기" icon="search" stateText={`전체 ${total}개 중 ${tasks.length}개`}>
           <form method="get" action="/tasks" className="pform" role="search">
             <label className="pform-main">
@@ -129,7 +141,7 @@ export default async function TasksPage({ searchParams }) {
 
         {tasks.length === 0 && (
           <p className="muted">
-            {filtered ? '조건에 맞는 할 일이 없어요. 조건을 바꾸거나 지워 보세요.' : '아직 할 일이 없어요. 아래에서 첫 할 일을 만들어 보세요.'}
+            {filtered ? '조건에 맞는 할 일이 없어요. 조건을 바꾸거나 지워 보세요.' : '아직 할 일이 없어요. 위에서 첫 할 일을 만들어 보세요.'}
           </p>
         )}
         <ol className="flow-grid" aria-label="할 일 목록">
@@ -139,13 +151,6 @@ export default async function TasksPage({ searchParams }) {
         </ol>
       </section>
 
-      <section id="new">
-        {plans.length === 0 ? (
-          <p className="muted">할 일은 계획에 딸려요. <Link href="/">먼저 계획을 세워 주세요.</Link></p>
-        ) : (
-          <TaskForm action={createTaskAction} plans={plans} defaultPlanId={f.plan ?? undefined} heading="새 할 일 만들기" submitLabel="할 일 저장" />
-        )}
-      </section>
     </>
   );
 }
