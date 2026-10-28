@@ -50,6 +50,8 @@ function backTo(formData, fallback) {
   return /^(\/tasks(\/\d+)?(\?[^#\\]*)?|\/plans\/\d+)$/.test(back) ? back : fallback;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function withNotice(url, key, id) {
   return `${url}${url.includes('?') ? '&' : '?'}${key}=${id}`;
 }
@@ -112,6 +114,30 @@ export async function createLogAction(_prev, formData) {
   revalidatePath('/tasks');
   revalidatePath('/review');
   redirect(`/tasks/${log.task_id}?logged=1#logs`);
+}
+
+// 할 일 목록에서 바로: 실행 기록을 남기고(진행 중이었다면) 완료로 바꾼다.
+// mode=done_only 이면 기록 없이 완료만. 기록 키와 완료 키가 따로 있어 연달아 눌러도 각각 한 번만 들어간다.
+export async function logFromListAction(_prev, formData) {
+  const id = Number(formData.get('task_id'));
+  const doneKey = String(formData.get('done_key') ?? '');
+  const onlyDone = formData.get('mode') === 'done_only';
+  if (!Number.isSafeInteger(id) || id <= 0) return { error: '잘못된 요청이에요. 새로고침한 뒤 다시 해 주세요.' };
+  if (doneKey && !UUID_RE.test(doneKey)) return { error: '잘못된 요청이에요. 새로고침한 뒤 다시 해 주세요.' };
+  if (onlyDone && !doneKey) return { error: '이미 완료된 할 일이에요.' };
+  let log = null;
+  if (!onlyDone) {
+    const parsed = parseLogForm(formData);
+    if (parsed.error) return { error: parsed.error };
+    log = parsed.log;
+  }
+  if (!(await getTask(id))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
+  if (log) await insertLog(log);
+  if (doneKey) await completeTask(id, doneKey);
+  revalidatePath('/tasks');
+  revalidatePath('/review');
+  const notice = log && doneKey ? 'logged_done' : log ? 'logged' : 'done';
+  redirect(withNotice(backTo(formData, '/tasks'), notice, id) + `#task-${id}`);
 }
 
 // ---- 돌아보기 → 다음 계획 (카드 4) ----
