@@ -6,7 +6,7 @@ import PromptBox from './PromptBox';
 const AREAS = ['운동', '공부', '업무', '게임 연습', 'ALEPH', '생활'];
 const PRIORITIES = ['높음', '보통', '낮음'];
 
-export default function PlanForm({ action, plan, submitLabel, heading }) {
+export default function PlanForm({ action, plan, submitLabel, heading, carryNote }) {
   const [state, formAction, pending] = useActionState(action, null);
   const editing = Boolean(plan);
   const p = plan ?? { estimate_basis: 'per_day', priority: '보통', area: '공부' };
@@ -18,6 +18,15 @@ export default function PlanForm({ action, plan, submitLabel, heading }) {
           <>
             <input type="hidden" name="id" value={p.id} />
             <input type="hidden" name="version" value={p.version} />
+          </>
+        )}
+        {carryNote && (
+          <>
+            <input type="hidden" name="carry_note_id" value={carryNote.id} />
+            <p className="quote quote-carry" data-testid="carry-note">
+              <span className="quote-label">돌아보기에서 넘어온 고칠 점 #{carryNote.id} · 이 계획을 저장하면 함께 붙어요</span>
+              {carryNote.lesson}
+            </p>
           </>
         )}
         <div className="pform-context">

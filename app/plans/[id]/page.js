@@ -6,13 +6,15 @@ import TaskCard from '@/components/TaskCard';
 import { updatePlanAction } from '@/app/actions';
 import { COMPARED_FIELDS, getPlan, listRevisions } from '@/lib/plans';
 import { listTasks, parseTaskQuery } from '@/lib/tasks';
+import { listNotesForPlan } from '@/lib/review';
+import CarriedNotes from '@/components/CarriedNotes';
 import { FIELD_LABELS, formatEstimate, formatField, formatPeriod, formatTime, todaySeoul } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PlanPage({ params, searchParams }) {
   const { id: rawId } = await params;
-  const { saved, done, reopened } = await searchParams;
+  const { saved, done, reopened, carried } = await searchParams;
   const id = Number(rawId);
   if (!Number.isSafeInteger(id) || id <= 0) notFound();
 
@@ -21,6 +23,7 @@ export default async function PlanPage({ params, searchParams }) {
   const revisions = await listRevisions(id);
   if (!plan) notFound();
   const tasks = await listTasks(parseTaskQuery({ plan: String(id) }));
+  const notes = await listNotesForPlan(id);
   const today = todaySeoul();
 
   return (
@@ -28,6 +31,7 @@ export default async function PlanPage({ params, searchParams }) {
       <p><Link href="/">← 내 계획</Link></p>
       {saved && <p className="ok" role="status">고친 내용을 저장했어요. 고치기 전 내용은 아래 이력에 남아 있어요.</p>}
       {done && <p className="ok" role="status">할 일 #{String(done)}을(를) 완료로 바꿨어요.</p>}
+      {carried && <p className="ok" role="status">돌아보기에서 정한 고칠 점 #{String(carried)}을(를) 이 계획으로 넘겼어요.</p>}
       {reopened && <p className="ok" role="status">할 일 #{String(reopened)}을(를) 다시 진행 중으로 되돌렸어요.</p>}
 
       <FlowCard
@@ -54,6 +58,8 @@ export default async function PlanPage({ params, searchParams }) {
           <Chip icon="clock">{formatEstimate(plan)}</Chip>
         </div>
       </FlowCard>
+
+      {notes.length > 0 && <CarriedNotes notes={notes} />}
 
       <section className="flow-chain" aria-labelledby="plan-tasks-h">
         <h2 id="plan-tasks-h">이 계획의 할 일 <span className="muted">{tasks.length}개</span></h2>

@@ -226,3 +226,37 @@ dl.compact dt { color: var(--muted); } dl.compact dd { margin: 0; overflow-wrap:
 .stat-label { font-size: .85rem; color: var(--muted); font-weight: 600; }
 .stats strong { font-size: 1.6rem; line-height: 1.2; }
 .plain-list { padding-left: 20px; margin: 0; display: grid; gap: 6px; }
+
+/* 카드 4: 돌아보기 집계 · 근거 기록 · 고칠 점 */
+.flow[data-kind='see'] { --tab-bg: var(--do-bg); --tab-fg: var(--do-fg); }
+.flow[data-kind='see'] .flow-title .icon { color: var(--do-fg); }
+.period { display: grid; gap: 10px; margin-bottom: 12px; }
+.period .chip { text-decoration: none; font-weight: 600; }
+.period .chip small { font-weight: 400; color: var(--muted); }
+.chip-on { background: var(--do-bg); border-color: transparent; color: var(--do-fg); }
+.chip-on small { color: inherit !important; }
+nav.chips .chip { text-decoration: none; }
+.period-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin: 0; }
+.period-form label { display: grid; gap: 2px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.period-form input { width: auto; padding: 6px 8px; }
+.period-form button { padding: 8px 14px; }
+.stats { margin-top: 14px; }
+.stat-link { font-size: .78rem; color: var(--link); }
+.stats a.stat-over strong, .review-table .over, .review-table .over a { color: var(--soon-fg); }
+.stats a.stat-under strong, .review-table .under, .review-table .under a { color: var(--low); }
+.table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.review-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.review-table th, .review-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; vertical-align: top; }
+.review-table th[scope='row'], .review-table thead th:first-child { text-align: left; white-space: normal; min-width: 9em; }
+.review-table thead th { font-size: .8rem; color: var(--muted); background: var(--chip); }
+.review-table tfoot th, .review-table tfoot td { font-weight: 700; border-bottom: 0; }
+.review-table td a { font-weight: 600; display: inline-block; min-width: 2em; }
+.evidence-table td, .evidence-table th { text-align: left; white-space: normal; }
+.log-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; min-width: 16em; }
+.blocker { color: var(--warn-fg); font-weight: 600; }
+.late { color: var(--warn-fg); font-weight: 600; }
+.rules { margin-top: 12px; font-size: .88rem; }
+.quote-carry { background: var(--do-bg); border-color: transparent; }
+.stats strong { font-size: 1.35rem; word-break: keep-all; }
+.evidence-table td:nth-child(n+4):nth-child(-n+7) { white-space: nowrap; }
+.evidence-table th[scope='row'] { min-width: 10em; }

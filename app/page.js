@@ -4,12 +4,18 @@ import NoLoginNotice from '@/components/NoLoginNotice';
 import PlanForm from '@/components/PlanForm';
 import { createPlanAction } from './actions';
 import { listPlans } from '@/lib/plans';
+import { getNote } from '@/lib/review';
 import { formatEstimate, formatPeriod } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Home() {
+export default async function Home({ searchParams }) {
+  const { carry } = await searchParams;
+  // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
   const plans = await listPlans();
+  const carryId = Number(carry);
+  const note = Number.isSafeInteger(carryId) && carryId > 0 ? await getNote(carryId) : null;
+  const carryNote = note && !note.next_plan_id ? note : null;
   return (
     <>
       <NoLoginNotice />
@@ -52,8 +58,11 @@ export default async function Home() {
           ))}
         </div>
       </section>
-      <section>
-        <PlanForm action={createPlanAction} heading="새 계획 세우기" submitLabel="계획 저장" />
+      <section id="new-plan">
+        {note?.next_plan_id && (
+          <p className="ok" role="status">고칠 점 #{note.id}은(는) 이미 <Link href={`/plans/${note.next_plan_id}#carried`}>계획 #{note.next_plan_id}</Link>로 넘어갔어요.</p>
+        )}
+        <PlanForm key={carryNote?.id ?? 0} action={createPlanAction} heading="새 계획 세우기" submitLabel="계획 저장" carryNote={carryNote} />
       </section>
     </>
   );
