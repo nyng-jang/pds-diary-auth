@@ -13,7 +13,9 @@ export default async function PlanPage({ params, searchParams }) {
   const id = Number(rawId);
   if (!Number.isSafeInteger(id) || id <= 0) notFound();
 
-  const [plan, revisions] = await Promise.all([getPlan(id), listRevisions(id)]);
+  // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
+  const plan = await getPlan(id);
+  const revisions = await listRevisions(id);
   if (!plan) notFound();
 
   return (

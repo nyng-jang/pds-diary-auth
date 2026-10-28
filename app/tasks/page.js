@@ -16,7 +16,11 @@ const FILTER_KEYS = ['q', 'plan', 'status', 'priority', 'tag', 'due', 'sort'];
 export default async function TasksPage({ searchParams }) {
   const sp = await searchParams;
   const f = parseTaskQuery(sp);
-  const [tasks, total, tags, plans] = await Promise.all([listTasks(f), countTasks(), listTags(), listPlanOptions()]);
+  // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
+  const tasks = await listTasks(f);
+  const total = await countTasks();
+  const tags = await listTags();
+  const plans = await listPlanOptions();
   const today = todaySeoul();
 
   // 지금 보고 있는 조건 (완료·되돌리기 후 이 화면으로 돌아오게)
