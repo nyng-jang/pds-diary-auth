@@ -15,7 +15,9 @@ export default async function TaskPage({ params, searchParams }) {
   const id = Number(rawId);
   if (!Number.isSafeInteger(id) || id <= 0) notFound();
 
-  const [task, plans] = await Promise.all([getTask(id), listPlanOptions()]);
+  // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
+  const task = await getTask(id);
+  const plans = await listPlanOptions();
   if (!task) notFound();
   const due = formatDue(task.due_date, task.status);
 
