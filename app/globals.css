@@ -1,9 +1,9 @@
 /* 워크플로 카드 스타일
-   - 점무늬 배경 위에 흰 카드, 카드 위에 작은 색 라벨 탭(계획=노랑, 할 일=파랑, 완료=초록)
+   - 밝은 민무늬 배경 위에 흰 카드, 카드 위에 작은 색 라벨 탭(계획=노랑, 할 일=파랑, 완료=초록)
    - 정보는 회색 칩, 마감 지남 같은 경고만 빨간 칩
    - 입력 폼은 연두색 상태줄이 달린 프롬프트 박스 */
 :root {
-  --bg: #f5f5f3; --dot: #d6d6d1; --fg: #1d1d1b; --muted: #6e6e68; --card: #fff; --line: #e4e4df;
+  --bg: #fafaf8; --fg: #1d1d1b; --muted: #6e6e68; --card: #fff; --line: #e4e4df;
   --chip: #f3f3f0; --chip-line: #e2e2dc; --shadow: 0 1px 2px rgb(0 0 0 / .05), 0 4px 14px rgb(0 0 0 / .05);
   --accent: #1f7a4c; --link: #1f5fd1;
   --plan-bg: #fdf1bf; --plan-fg: #7a5d00;
@@ -18,7 +18,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #141413; --dot: #2c2c29; --fg: #ecebe6; --muted: #a3a29b; --card: #1f1f1d; --line: #34332f;
+    --bg: #171716; --fg: #ecebe6; --muted: #a3a29b; --card: #1f1f1d; --line: #34332f;
     --chip: #2a2a27; --chip-line: #3a3935; --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 4px 14px rgb(0 0 0 / .3);
     --accent: #7cd3a0; --link: #8db4ff;
     --plan-bg: #4a3d0c; --plan-fg: #f5d76e;
@@ -36,8 +36,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0; color: var(--fg);
-  /* 점무늬 배경: 1px 점을 16px 간격으로 반복 */
-  background: var(--bg) radial-gradient(var(--dot) 1px, transparent 1.2px) 0 0 / 16px 16px;
+  background: var(--bg);
   font: 16px/1.6 system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
 a { color: var(--link); }
