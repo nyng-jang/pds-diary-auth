@@ -7,22 +7,26 @@ import {
   STATUSES, completeTask, deleteTask, getTask, insertTask, parseTaskForm, reopenTask, updateTask,
 } from '@/lib/tasks';
 import { insertLog, parseLogForm } from '@/lib/logs';
+import { requireUser } from '@/lib/auth';
+import { ImportError, importExport, parseExport } from '@/lib/import';
 import { carryNoteToPlan, getNote, getReviewByPlan, insertNote, parseNoteForm, sumRows } from '@/lib/review';
 
 export async function createPlanAction(_prev, formData) {
+  const { id: uid } = await requireUser();
   const { plan, error } = parsePlanForm(formData, { requireNote: false });
   if (error) return { error };
   // 돌아보기에서 "새 계획으로" 넘긴 고칠 점이 있으면 이 계획에 붙인다
   const noteId = Number(formData.get('carry_note_id'));
-  const note = Number.isSafeInteger(noteId) && noteId > 0 ? await getNote(noteId) : null;
-  const id = await insertPlan(plan);
-  const carried = note && !note.next_plan_id && (await carryNoteToPlan(note.id, id));
+  const note = Number.isSafeInteger(noteId) && noteId > 0 ? await getNote(uid, noteId) : null;
+  const id = await insertPlan(uid, plan);
+  const carried = note && !note.next_plan_id && (await carryNoteToPlan(uid, note.id, id));
   revalidatePath('/');
   revalidatePath('/review');
   redirect(carried ? `/plans/${id}?carried=${note.id}#carried` : `/plans/${id}`);
 }
 
 export async function updatePlanAction(_prev, formData) {
+  const { id: uid } = await requireUser();
   const id = Number(formData.get('id'));
   const expectedVersion = Number(formData.get('version'));
   if (!Number.isInteger(id) || !Number.isInteger(expectedVersion)) return { error: '잘못된 요청이에요.' };
@@ -30,11 +34,11 @@ export async function updatePlanAction(_prev, formData) {
   const { plan, error } = parsePlanForm(formData, { requireNote: true });
   if (error) return { error };
 
-  const current = await getPlan(id);
+  const current = await getPlan(uid, id);
   if (!current) return { error: '계획을 찾을 수 없어요.' };
   if (samePlanContent(current, plan)) return { error: '바뀐 내용이 없어요.' };
 
-  const ok = await updatePlan(id, expectedVersion, plan);
+  const ok = await updatePlan(uid, id, expectedVersion, plan);
   if (!ok) return { error: '그 사이에 계획이 바뀌었어요. 새로고침한 뒤 다시 고쳐 주세요.' };
 
   revalidatePath('/');
@@ -57,21 +61,23 @@ function withNotice(url, key, id) {
 }
 
 export async function createTaskAction(_prev, formData) {
+  const { id: uid } = await requireUser();
   const { task, error } = parseTaskForm(formData);
   if (error) return { error };
-  if (!(await getPlan(task.plan_id))) return { error: '고른 계획을 찾을 수 없어요.' };
-  const id = await insertTask(task);
+  if (!(await getPlan(uid, task.plan_id))) return { error: '고른 계획을 찾을 수 없어요.' };
+  const id = await insertTask(uid, task);
   revalidatePath('/tasks');
   redirect(`/tasks?created=${id}#task-${id}`);
 }
 
 export async function updateTaskAction(_prev, formData) {
+  const { id: uid } = await requireUser();
   const id = Number(formData.get('id'));
   if (!Number.isSafeInteger(id)) return { error: '잘못된 요청이에요.' };
   const { task, error } = parseTaskForm(formData);
   if (error) return { error };
-  if (!(await getPlan(task.plan_id))) return { error: '고른 계획을 찾을 수 없어요.' };
-  if (!(await updateTask(id, task))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
+  if (!(await getPlan(uid, task.plan_id))) return { error: '고른 계획을 찾을 수 없어요.' };
+  if (!(await updateTask(uid, id, task))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
   revalidatePath('/tasks');
   redirect(`/tasks/${id}?saved=1`);
 }
@@ -79,15 +85,16 @@ export async function updateTaskAction(_prev, formData) {
 // 완료는 폼에 담긴 요청 키(request_key)로 한 번만 기록된다. 연달아 두 번 눌러 같은 키가 두 번 와도
 // 두 번째는 데이터베이스가 받지 않고, 둘 다 같은 화면으로 돌아간다.
 export async function setTaskStatusAction(formData) {
+  const { id: uid } = await requireUser();
   const id = Number(formData.get('id'));
   const status = String(formData.get('status'));
   const key = String(formData.get('request_key') ?? '');
   if (!Number.isSafeInteger(id) || !STATUSES.includes(status)) return;
   if (status === '완료') {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) return;
-    await completeTask(id, key);
+    await completeTask(uid, id, key);
   } else {
-    await reopenTask(id);
+    await reopenTask(uid, id);
   }
   revalidatePath('/tasks');
   revalidatePath('/review');
@@ -96,9 +103,10 @@ export async function setTaskStatusAction(formData) {
 }
 
 export async function deleteTaskAction(formData) {
+  const { id: uid } = await requireUser();
   const id = Number(formData.get('id'));
   if (!Number.isSafeInteger(id)) return;
-  await deleteTask(id);
+  await deleteTask(uid, id);
   revalidatePath('/tasks');
   redirect(`/tasks?deleted=${id}`);
 }
@@ -106,11 +114,12 @@ export async function deleteTaskAction(formData) {
 // ---- 실제로 한 일 (카드 3) ----
 
 export async function createLogAction(_prev, formData) {
+  const { id: uid } = await requireUser();
   const { log, error } = parseLogForm(formData);
   if (error) return { error };
-  if (!(await getTask(log.task_id))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
+  if (!(await getTask(uid, log.task_id))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
   // 같은 요청이 두 번 와서 이미 들어가 있으면 그대로 두고 같은 화면으로 간다
-  await insertLog(log);
+  await insertLog(uid, log);
   revalidatePath('/tasks');
   revalidatePath('/review');
   redirect(`/tasks/${log.task_id}?logged=1#logs`);
@@ -119,6 +128,7 @@ export async function createLogAction(_prev, formData) {
 // 할 일 목록에서 바로: 실행 기록을 남기고(진행 중이었다면) 완료로 바꾼다.
 // mode=done_only 이면 기록 없이 완료만. 기록 키와 완료 키가 따로 있어 연달아 눌러도 각각 한 번만 들어간다.
 export async function logFromListAction(_prev, formData) {
+  const { id: uid } = await requireUser();
   const id = Number(formData.get('task_id'));
   const doneKey = String(formData.get('done_key') ?? '');
   const onlyDone = formData.get('mode') === 'done_only';
@@ -131,9 +141,9 @@ export async function logFromListAction(_prev, formData) {
     if (parsed.error) return { error: parsed.error };
     log = parsed.log;
   }
-  if (!(await getTask(id))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
-  if (log) await insertLog(log);
-  if (doneKey) await completeTask(id, doneKey);
+  if (!(await getTask(uid, id))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
+  if (log) await insertLog(uid, log);
+  if (doneKey) await completeTask(uid, id, doneKey);
   revalidatePath('/tasks');
   revalidatePath('/review');
   const notice = log && doneKey ? 'logged_done' : log ? 'logged' : 'done';
@@ -144,15 +154,16 @@ export async function logFromListAction(_prev, formData) {
 
 // 고칠 점 한 줄을 저장하고 고른 계획으로 넘긴다. 근거 숫자(snapshot)는 화면 값이 아니라 서버에서 다시 센다.
 export async function createNoteAction(_prev, formData) {
+  const { id: uid } = await requireUser();
   const { note, error } = parseNoteForm(formData);
   if (error) return { error };
-  if (note.basis_plan_id && !(await getPlan(note.basis_plan_id))) return { error: '근거로 본 계획을 찾을 수 없어요.' };
-  if (note.next_plan_id && !(await getPlan(note.next_plan_id))) return { error: '넘길 계획을 찾을 수 없어요.' };
+  if (note.basis_plan_id && !(await getPlan(uid, note.basis_plan_id))) return { error: '근거로 본 계획을 찾을 수 없어요.' };
+  if (note.next_plan_id && !(await getPlan(uid, note.next_plan_id))) return { error: '넘길 계획을 찾을 수 없어요.' };
 
-  const rows = await getReviewByPlan({ from: note.from, to: note.to });
+  const rows = await getReviewByPlan(uid, { from: note.from, to: note.to });
   const basis = note.basis_plan_id ? rows.find((r) => Number(r.plan_id) === note.basis_plan_id) : sumRows(rows);
   const { plan_id: _p, plan_title: _t, ...numbers } = basis;
-  const saved = await insertNote({ ...note, snapshot: { ...numbers, period_from: note.from, period_to: note.to } });
+  const saved = await insertNote(uid, { ...note, snapshot: { ...numbers, period_from: note.from, period_to: note.to } });
 
   revalidatePath('/review');
   if (saved.next_plan_id) {
@@ -160,4 +171,24 @@ export async function createNoteAction(_prev, formData) {
     redirect(`/plans/${saved.next_plan_id}?carried=${saved.id}#carried`);
   }
   redirect(`/?carry=${saved.id}#new-plan`);
+}
+
+// ---- 과제 6 자료 가져오기 (과제 7 카드 1) ----
+
+// 과제 6 다이어리의 "내 자료 전체 내려받기" 파일을 로그인한 사람의 자료로 옮긴다. 빈 계정에서 한 번만.
+export async function importExportAction(_prev, formData) {
+  const { id: uid } = await requireUser();
+  const file = formData.get('file');
+  if (!file || typeof file.text !== 'function' || file.size === 0) return { error: '가져올 파일을 골라 주세요.' };
+  if (file.size > 900_000) return { error: '파일이 너무 커요.' };
+  let result;
+  try {
+    result = await importExport(uid, parseExport(await file.text()));
+  } catch (e) {
+    if (e instanceof ImportError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath('/');
+  const c = result.counts;
+  redirect(`/?imported=${[c.plans, c.plan_revisions, c.tasks, c.task_logs, c.task_completions, c.review_notes].join('-')}`);
 }

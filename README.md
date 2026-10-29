@@ -2,7 +2,7 @@
 
 계획(Plan) → 실제로 한 일(Do) → 돌아보기(See)를 하나로 잇는 다이어리입니다.
 
-> 아직 로그인이 없습니다. 주소를 아는 사람은 누구나 보고 고칠 수 있으니 남이 봐도 괜찮은 내용만 넣습니다.
+> 과제 7부터 가입·로그인이 붙었습니다. 로그인하지 않으면 모든 화면이 로그인 화면으로 가고, 자료는 주인(로그인한 사람)의 것만 보입니다.
 
 ## 카드 1 — 계획과 수정 이력
 
@@ -59,15 +59,36 @@
 - 숫자를 누르면 `/review/[metric]` 근거 기록으로 간다. 그 숫자를 만든 할 일·실행 기록(막힌 이유, 완료 기록 번호 포함)과 다시 더한 합계가 나온다. 조건은 `lib/review.js`의 `METRICS` 한곳에서 집계와 근거가 같이 쓴다.
 - 고칠 점 한 줄(`review_notes`, db/004_reviews.sql) : 돌아보기에서 정해 기존 계획이나 새 계획으로 넘긴다. 정할 때의 숫자를 함께 저장하고, 넘긴 계획 화면 위쪽 "돌아보기에서 넘어온 고칠 점"에 보인다. 지우거나 바꿀 수 없다.
 
+## 과제 7 카드 1 — 가입·로그인·로그아웃
+
+| 무엇 | 어디 |
+|---|---|
+| 인증 서비스 | Supabase Auth, `@supabase/ssr` 0.12.7 + `@supabase/supabase-js` 2.118.0 |
+| 로그인 안 했으면 막기 | `middleware.js` (화면은 `/login`으로, `/api/*`는 401) + 모든 화면·Server Action 첫 줄 `requireUser()` (`lib/auth.js`) |
+| 로그인 확인 방법 | `supabase.auth.getUser()` — 쿠키의 토큰을 믿지 않고 매번 Supabase Auth 서버에 묻는다. 로그아웃으로 지운 세션의 쿠키는 거절된다 |
+| 가입·로그인·로그아웃 | `app/signup`, `app/login`, `app/auth-actions.js`, 머리의 로그아웃 버튼 |
+| 주인 칸 | `db/005_owner.sql`: 6개 표 모두 `user_id`(not null). 할 일·기록·고칠 점은 같은 주인의 계획·할 일에만 붙도록 (id, user_id) 외래 키 |
+| 내 자료만 | `lib/*.js`의 모든 SQL에 `user_id = 로그인한 사람` 조건 |
+| 과제 6 자료 옮기기 | 계획이 없는 계정의 첫 화면 "과제 6 자료 가져오기" (`lib/import.js`). 과제 6의 `/api/export` 파일을 한 트랜잭션으로 넣는다 |
+
 ## 실행
 
 ```bash
-cp .env.example .env.local   # DATABASE_URL 채우기
+cp .env.example .env.local   # DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL/ANON_KEY 채우기
 npm install
 npm run dev
 ```
 
 표가 없으면 첫 요청 때 `db/` 아래 SQL을 이름 순서대로 한 번 적용합니다. 직접 적용하려면 `npm run db:migrate`.
+
+## 과제 7 배포 (과제 6과 같은 Supabase 프로젝트를 나눠 씀)
+
+1. Supabase SQL Editor에서 `docs/task7-db-setup.sql`을 비밀번호만 바꿔 실행 → 역할 `diary2_app`, 스키마 `diary2`
+2. Supabase > Authentication > Sign In / Providers > Email: Confirm email 끄기
+3. Vercel에서 이 저장소를 Import (Storage 연동은 하지 않음) 후 환경 변수 3개
+   - `DATABASE_URL` = Transaction pooler(6543) 주소에서 사용자만 `diary2_app.프로젝트ID`로, 비밀번호는 1에서 정한 것
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Supabase 프로젝트 주소와 공개 키
+4. 배포 후 `/api/health`가 `"schema":"diary2"`를 보여 주면 과제 7 자리로 붙은 것
 
 ## 배포 (Vercel + Supabase)
 

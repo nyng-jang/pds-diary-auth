@@ -1,24 +1,25 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import NoLoginNotice from '@/components/NoLoginNotice';
 import { METRICS, formatPeriodRange, listEvidenceTasks, parseReviewQuery, reviewQueryString } from '@/lib/review';
 import { getPlan } from '@/lib/plans';
 import { formatMinutes, formatRange, formatSignedMinutes } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // 근거 기록: 돌아보기 숫자 하나를 누르면 오는 곳. 그 숫자를 만든 할 일과 실행 기록을 모두 보여 주고,
 // 아래에서 다시 세거나 더한 값이 돌아보기 숫자와 같은지 바로 볼 수 있게 한다.
 export default async function EvidencePage({ params, searchParams }) {
+  const { id: uid } = await requireUser();
   const { metric } = await params;
   const m = METRICS[metric];
   if (!m) notFound();
   const f = parseReviewQuery(await searchParams);
 
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
-  const plan = f.plan ? await getPlan(f.plan) : null;
+  const plan = f.plan ? await getPlan(uid, f.plan) : null;
   if (f.plan && !plan) notFound();
-  const tasks = await listEvidenceTasks(metric, f);
+  const tasks = await listEvidenceTasks(uid, metric, f);
 
   const estimate = tasks.reduce((a, t) => a + t.estimated_minutes, 0);
   const actual = tasks.reduce((a, t) => a + t.actual_minutes, 0);
@@ -34,7 +35,6 @@ export default async function EvidencePage({ params, searchParams }) {
 
   return (
     <>
-      <NoLoginNotice />
       <p><Link href={`/review${reviewQueryString(f)}`}>← 돌아보기 ({formatPeriodRange(f)})</Link></p>
       <section aria-labelledby="ev-h">
         <h1 id="ev-h">근거 기록 · {m.name} <span data-testid="evidence-value">{shown}</span></h1>

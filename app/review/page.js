@@ -1,13 +1,13 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/Icon';
-import NoLoginNotice from '@/components/NoLoginNotice';
 import NoteForm from '@/components/NoteForm';
 import { NoteCard } from '@/components/CarriedNotes';
 import {
   METRICS, formatPeriodRange, getReviewByPlan, listNotes, parseReviewQuery, periodPresets, reviewQueryString, sumRows,
 } from '@/lib/review';
 import { formatMinutes, formatSignedMinutes, todaySeoul } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,13 +66,14 @@ function show(metric, v) {
 
 // 돌아보기: 기간별 집계. 숫자를 누르면 그 숫자를 만든 할 일·실행 기록(근거 기록)으로 간다.
 export default async function ReviewPage({ searchParams }) {
+  const { id: uid } = await requireUser();
   const sp = await searchParams;
   const f = parseReviewQuery(sp);
   const view = sp.view in VIEWS ? sp.view : 'all';
   const today = todaySeoul();
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
-  const rows = await getReviewByPlan(f);
-  const notes = await listNotes();
+  const rows = await getReviewByPlan(uid, f);
+  const notes = await listNotes(uid);
   const total = sumRows(rows);
   const presets = periodPresets(today);
   const active = presets.find((p) => p.from === f.from && p.to === f.to);
@@ -116,7 +117,6 @@ export default async function ReviewPage({ searchParams }) {
 
   return (
     <>
-      <NoLoginNotice />
       <section aria-labelledby="review-h">
         <div className="review-head">
           <h1 id="review-h">돌아보기</h1>

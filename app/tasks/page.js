@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import NoLoginNotice from '@/components/NoLoginNotice';
 import PromptBox from '@/components/PromptBox';
 import TaskCard from '@/components/TaskCard';
 import TaskForm from '@/components/TaskForm';
@@ -9,19 +8,21 @@ import {
   DUE_FILTERS, SORTS, STATUSES, countTasks, listPlanOptions, listTags, listTasks, parseTaskQuery,
 } from '@/lib/tasks';
 import { todaySeoul } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 const FILTER_KEYS = ['q', 'plan', 'status', 'priority', 'tag', 'due', 'sort'];
 
 export default async function TasksPage({ searchParams }) {
+  const { id: uid } = await requireUser();
   const sp = await searchParams;
   const f = parseTaskQuery(sp);
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
-  const tasks = await listTasks(f);
-  const total = await countTasks();
-  const tags = await listTags();
-  const plans = await listPlanOptions();
+  const tasks = await listTasks(uid, f);
+  const total = await countTasks(uid);
+  const tags = await listTags(uid);
+  const plans = await listPlanOptions(uid);
   const today = todaySeoul();
 
   // 지금 보고 있는 조건 (완료·되돌리기 후 이 화면으로 돌아오게)
@@ -51,7 +52,6 @@ export default async function TasksPage({ searchParams }) {
 
   return (
     <>
-      <NoLoginNotice />
       <section aria-labelledby="tasks-h">
         <div className="page-head">
           <h1 id="tasks-h">할 일</h1>

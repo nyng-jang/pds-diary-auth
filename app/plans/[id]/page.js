@@ -9,21 +9,23 @@ import { listTasks, parseTaskQuery } from '@/lib/tasks';
 import { listNotesForPlan } from '@/lib/review';
 import CarriedNotes from '@/components/CarriedNotes';
 import { FIELD_LABELS, formatEstimate, formatField, formatPeriod, formatTime, todaySeoul } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PlanPage({ params, searchParams }) {
+  const { id: uid } = await requireUser();
   const { id: rawId } = await params;
   const { saved, done, reopened, carried } = await searchParams;
   const id = Number(rawId);
   if (!Number.isSafeInteger(id) || id <= 0) notFound();
 
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
-  const plan = await getPlan(id);
-  const revisions = await listRevisions(id);
+  const plan = await getPlan(uid, id);
+  const revisions = await listRevisions(uid, id);
   if (!plan) notFound();
-  const tasks = await listTasks(parseTaskQuery({ plan: String(id) }));
-  const notes = await listNotesForPlan(id);
+  const tasks = await listTasks(uid, parseTaskQuery({ plan: String(id) }));
+  const notes = await listNotesForPlan(uid, id);
   const today = todaySeoul();
 
   return (
