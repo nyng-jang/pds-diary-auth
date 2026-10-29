@@ -10,8 +10,17 @@
 -- 아래 '여기에-새-비밀번호' 를 직접 정한 긴 비밀번호로 바꾼 뒤 실행한다. 이 비밀번호는 어디에도 적어 두지 말고
 -- Vercel 환경 변수 DATABASE_URL 에만 넣는다.
 
-create role diary2_app login noinherit password '여기에-새-비밀번호';
-create schema diary2 authorization diary2_app;
+-- 여러 번 실행해도 된다 (역할이 이미 있으면 비밀번호만 다시 정한다)
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'diary2_app') then
+    create role diary2_app login noinherit;
+  end if;
+end $$;
+alter role diary2_app password '여기에-새-비밀번호';
+-- Postgres 16부터는 스키마 주인을 남으로 정하려면 그 역할로 SET ROLE 할 수 있어야 해서, postgres에 역할을 붙인다
+grant diary2_app to postgres;
+create schema if not exists diary2 authorization diary2_app;
 alter role diary2_app set search_path = diary2;
 
 -- 확인: diary2 | diary2_app 한 줄이 나오면 된다
