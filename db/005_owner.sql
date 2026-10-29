@@ -1,5 +1,7 @@
 -- 과제 7 카드 1: 자료마다 주인(로그인한 사람)을 붙인다.
 -- user_id : Supabase Auth의 사용자 번호(auth.users.id). 모든 표에서 반드시 채워야 한다.
+--           앱 전용 DB 역할(diary2_app)은 auth.users에 외래 키를 걸 권한이 없어 값만 저장한다.
+--           값은 서버가 getUser()로 확인한 번호만 넣는다 (lib/auth.js → lib/*.js).
 --
 -- 주인이 엇갈리지 않게 데이터베이스가 막는다.
 --  - 할 일은 "같은 주인의" 계획에만 붙는다: (plan_id, user_id) → plans(id, user_id)
@@ -10,12 +12,12 @@
 --
 -- 이 파일은 빈 DB에 처음 적용한다고 보고 not null로 바로 만든다.
 
-alter table plans          add column if not exists user_id uuid not null references auth.users(id);
-alter table plan_revisions add column if not exists user_id uuid not null references auth.users(id);
-alter table tasks          add column if not exists user_id uuid not null references auth.users(id);
-alter table task_logs      add column if not exists user_id uuid not null references auth.users(id);
-alter table task_completions add column if not exists user_id uuid not null references auth.users(id);
-alter table review_notes   add column if not exists user_id uuid not null references auth.users(id);
+alter table plans          add column if not exists user_id uuid not null;
+alter table plan_revisions add column if not exists user_id uuid not null;
+alter table tasks          add column if not exists user_id uuid not null;
+alter table task_logs      add column if not exists user_id uuid not null;
+alter table task_completions add column if not exists user_id uuid not null;
+alter table review_notes   add column if not exists user_id uuid not null;
 
 create index if not exists plans_user_idx on plans (user_id, id);
 create index if not exists tasks_user_idx on tasks (user_id, id);

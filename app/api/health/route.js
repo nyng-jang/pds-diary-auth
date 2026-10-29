@@ -35,8 +35,8 @@ export async function GET() {
   try {
     await ensureSchema();
     // 로그인 없이 열리는 주소라 자료 개수는 보내지 않는다 (과제 7). 표가 준비됐는지만 본다.
-    await db()`select 1 from review_notes limit 1`;
-    return Response.json({ ok: true, conn });
+    const [{ schema }] = await db()`select current_schema() as schema, (select 1 from review_notes limit 1) as ready`;
+    return Response.json({ ok: true, conn, schema });
   } catch (e) {
     const code = e?.code ?? 'UNKNOWN';
     return Response.json(

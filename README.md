@@ -81,6 +81,15 @@ npm run dev
 
 표가 없으면 첫 요청 때 `db/` 아래 SQL을 이름 순서대로 한 번 적용합니다. 직접 적용하려면 `npm run db:migrate`.
 
+## 과제 7 배포 (과제 6과 같은 Supabase 프로젝트를 나눠 씀)
+
+1. Supabase SQL Editor에서 `docs/task7-db-setup.sql`을 비밀번호만 바꿔 실행 → 역할 `diary2_app`, 스키마 `diary2`
+2. Supabase > Authentication > Sign In / Providers > Email: Confirm email 끄기
+3. Vercel에서 이 저장소를 Import (Storage 연동은 하지 않음) 후 환경 변수 3개
+   - `DATABASE_URL` = Transaction pooler(6543) 주소에서 사용자만 `diary2_app.프로젝트ID`로, 비밀번호는 1에서 정한 것
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Supabase 프로젝트 주소와 공개 키
+4. 배포 후 `/api/health`가 `"schema":"diary2"`를 보여 주면 과제 7 자리로 붙은 것
+
 ## 배포 (Vercel + Supabase)
 
 1. Vercel에서 이 저장소를 Import 합니다.
