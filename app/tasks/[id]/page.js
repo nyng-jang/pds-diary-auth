@@ -15,17 +15,17 @@ import { requireUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export default async function TaskPage({ params, searchParams }) {
-  await requireUser();
+  const { id: uid } = await requireUser();
   const { id: rawId } = await params;
   const sp = await searchParams;
   const id = Number(rawId);
   if (!Number.isSafeInteger(id) || id <= 0) notFound();
 
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
-  const task = await getTask(id);
+  const task = await getTask(uid, id);
   if (!task) notFound();
-  const logs = await listLogsForTask(id);
-  const plans = await listPlanOptions();
+  const logs = await listLogsForTask(uid, id);
+  const plans = await listPlanOptions(uid);
   const gap = formatGap(task.actual_minutes, task.estimated_minutes);
 
   const notice =

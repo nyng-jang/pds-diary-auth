@@ -34,9 +34,9 @@ export async function GET() {
   if (!conn.env) return Response.json({ ok: false, code: 'NO_URL', hint: HINTS.NO_URL, conn }, { status: 500 });
   try {
     await ensureSchema();
-    const [{ plans, tasks }] = await db()`
-      select (select count(*)::int from plans) as plans, (select count(*)::int from tasks) as tasks`;
-    return Response.json({ ok: true, conn, plans, tasks });
+    // 로그인 없이 열리는 주소라 자료 개수는 보내지 않는다 (과제 7). 표가 준비됐는지만 본다.
+    await db()`select 1 from review_notes limit 1`;
+    return Response.json({ ok: true, conn });
   } catch (e) {
     const code = e?.code ?? 'UNKNOWN';
     return Response.json(

@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import FlowCard, { Chip, Meta } from '@/components/FlowCard';
-import NoLoginNotice from '@/components/NoLoginNotice';
+import ImportForm from '@/components/ImportForm';
 import PlanForm from '@/components/PlanForm';
-import { createPlanAction } from './actions';
+import { createPlanAction, importExportAction } from './actions';
 import { listPlans } from '@/lib/plans';
 import { getNote } from '@/lib/review';
 import { formatEstimate, formatPeriod } from '@/lib/format';
@@ -11,16 +11,23 @@ import { requireUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export default async function Home({ searchParams }) {
-  await requireUser();
-  const { carry } = await searchParams;
+  const { id: uid } = await requireUser();
+  const { carry, imported } = await searchParams;
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
-  const plans = await listPlans();
+  const plans = await listPlans(uid);
   const carryId = Number(carry);
-  const note = Number.isSafeInteger(carryId) && carryId > 0 ? await getNote(carryId) : null;
+  const note = Number.isSafeInteger(carryId) && carryId > 0 ? await getNote(uid, carryId) : null;
   const carryNote = note && !note.next_plan_id ? note : null;
   return (
     <>
-      <NoLoginNotice />
+      {typeof imported === 'string' && /^\d+(-\d+){5}$/.test(imported) && (
+        <p className="ok" role="status">
+          과제 6 자료를 가져왔어요: {(() => {
+            const [a, b, c, d, e, f] = imported.split('-');
+            return `계획 ${a} · 수정 이력 ${b} · 할 일 ${c} · 실행 기록 ${d} · 완료 기록 ${e} · 고칠 점 ${f}`;
+          })()}
+        </p>
+      )}
       <section aria-labelledby="plans-h">
         <div className="page-head">
           <h1 id="plans-h">내 계획</h1>
@@ -30,7 +37,12 @@ export default async function Home({ searchParams }) {
             <li data-kind="see"><Link href="/review">돌아보기</Link></li>
           </ol>
         </div>
-        {plans.length === 0 && <p className="muted">아직 계획이 없어요. 아래에서 첫 계획을 세워 보세요.</p>}
+        {plans.length === 0 && (
+          <>
+            <p className="muted">아직 계획이 없어요. 과제 6에서 쓰던 자료를 가져오거나, 아래에서 첫 계획을 세워 보세요.</p>
+            <ImportForm action={importExportAction} />
+          </>
+        )}
         <div className="flow-grid">
           {plans.map((p) => (
             <FlowCard
