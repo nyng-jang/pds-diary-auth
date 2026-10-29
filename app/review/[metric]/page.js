@@ -4,12 +4,14 @@ import NoLoginNotice from '@/components/NoLoginNotice';
 import { METRICS, formatPeriodRange, listEvidenceTasks, parseReviewQuery, reviewQueryString } from '@/lib/review';
 import { getPlan } from '@/lib/plans';
 import { formatMinutes, formatRange, formatSignedMinutes } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // 근거 기록: 돌아보기 숫자 하나를 누르면 오는 곳. 그 숫자를 만든 할 일과 실행 기록을 모두 보여 주고,
 // 아래에서 다시 세거나 더한 값이 돌아보기 숫자와 같은지 바로 볼 수 있게 한다.
 export default async function EvidencePage({ params, searchParams }) {
+  await requireUser();
   const { metric } = await params;
   const m = METRICS[metric];
   if (!m) notFound();

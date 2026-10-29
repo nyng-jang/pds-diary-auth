@@ -10,10 +10,12 @@ import { updateTaskAction } from '@/app/actions';
 import { getTask, listPlanOptions } from '@/lib/tasks';
 import { listLogsForTask } from '@/lib/logs';
 import { formatGap, formatMinutes, formatTime } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TaskPage({ params, searchParams }) {
+  await requireUser();
   const { id: rawId } = await params;
   const sp = await searchParams;
   const id = Number(rawId);

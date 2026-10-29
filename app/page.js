@@ -6,10 +6,12 @@ import { createPlanAction } from './actions';
 import { listPlans } from '@/lib/plans';
 import { getNote } from '@/lib/review';
 import { formatEstimate, formatPeriod } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home({ searchParams }) {
+  await requireUser();
   const { carry } = await searchParams;
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)
   const plans = await listPlans();

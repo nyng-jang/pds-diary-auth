@@ -9,12 +9,14 @@ import {
   DUE_FILTERS, SORTS, STATUSES, countTasks, listPlanOptions, listTags, listTasks, parseTaskQuery,
 } from '@/lib/tasks';
 import { todaySeoul } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 const FILTER_KEYS = ['q', 'plan', 'status', 'priority', 'tag', 'due', 'sort'];
 
 export default async function TasksPage({ searchParams }) {
+  await requireUser();
   const sp = await searchParams;
   const f = parseTaskQuery(sp);
   // 질의는 하나씩 보낸다 (lib/db.js의 connect 설명 참고)

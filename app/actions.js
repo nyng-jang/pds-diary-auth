@@ -7,9 +7,11 @@ import {
   STATUSES, completeTask, deleteTask, getTask, insertTask, parseTaskForm, reopenTask, updateTask,
 } from '@/lib/tasks';
 import { insertLog, parseLogForm } from '@/lib/logs';
+import { requireUser } from '@/lib/auth';
 import { carryNoteToPlan, getNote, getReviewByPlan, insertNote, parseNoteForm, sumRows } from '@/lib/review';
 
 export async function createPlanAction(_prev, formData) {
+  await requireUser();
   const { plan, error } = parsePlanForm(formData, { requireNote: false });
   if (error) return { error };
   // 돌아보기에서 "새 계획으로" 넘긴 고칠 점이 있으면 이 계획에 붙인다
@@ -23,6 +25,7 @@ export async function createPlanAction(_prev, formData) {
 }
 
 export async function updatePlanAction(_prev, formData) {
+  await requireUser();
   const id = Number(formData.get('id'));
   const expectedVersion = Number(formData.get('version'));
   if (!Number.isInteger(id) || !Number.isInteger(expectedVersion)) return { error: '잘못된 요청이에요.' };
@@ -57,6 +60,7 @@ function withNotice(url, key, id) {
 }
 
 export async function createTaskAction(_prev, formData) {
+  await requireUser();
   const { task, error } = parseTaskForm(formData);
   if (error) return { error };
   if (!(await getPlan(task.plan_id))) return { error: '고른 계획을 찾을 수 없어요.' };
@@ -66,6 +70,7 @@ export async function createTaskAction(_prev, formData) {
 }
 
 export async function updateTaskAction(_prev, formData) {
+  await requireUser();
   const id = Number(formData.get('id'));
   if (!Number.isSafeInteger(id)) return { error: '잘못된 요청이에요.' };
   const { task, error } = parseTaskForm(formData);
@@ -79,6 +84,7 @@ export async function updateTaskAction(_prev, formData) {
 // 완료는 폼에 담긴 요청 키(request_key)로 한 번만 기록된다. 연달아 두 번 눌러 같은 키가 두 번 와도
 // 두 번째는 데이터베이스가 받지 않고, 둘 다 같은 화면으로 돌아간다.
 export async function setTaskStatusAction(formData) {
+  await requireUser();
   const id = Number(formData.get('id'));
   const status = String(formData.get('status'));
   const key = String(formData.get('request_key') ?? '');
@@ -96,6 +102,7 @@ export async function setTaskStatusAction(formData) {
 }
 
 export async function deleteTaskAction(formData) {
+  await requireUser();
   const id = Number(formData.get('id'));
   if (!Number.isSafeInteger(id)) return;
   await deleteTask(id);
@@ -106,6 +113,7 @@ export async function deleteTaskAction(formData) {
 // ---- 실제로 한 일 (카드 3) ----
 
 export async function createLogAction(_prev, formData) {
+  await requireUser();
   const { log, error } = parseLogForm(formData);
   if (error) return { error };
   if (!(await getTask(log.task_id))) return { error: '할 일을 찾을 수 없어요. 이미 지워졌을 수 있어요.' };
@@ -119,6 +127,7 @@ export async function createLogAction(_prev, formData) {
 // 할 일 목록에서 바로: 실행 기록을 남기고(진행 중이었다면) 완료로 바꾼다.
 // mode=done_only 이면 기록 없이 완료만. 기록 키와 완료 키가 따로 있어 연달아 눌러도 각각 한 번만 들어간다.
 export async function logFromListAction(_prev, formData) {
+  await requireUser();
   const id = Number(formData.get('task_id'));
   const doneKey = String(formData.get('done_key') ?? '');
   const onlyDone = formData.get('mode') === 'done_only';
@@ -144,6 +153,7 @@ export async function logFromListAction(_prev, formData) {
 
 // 고칠 점 한 줄을 저장하고 고른 계획으로 넘긴다. 근거 숫자(snapshot)는 화면 값이 아니라 서버에서 다시 센다.
 export async function createNoteAction(_prev, formData) {
+  await requireUser();
   const { note, error } = parseNoteForm(formData);
   if (error) return { error };
   if (note.basis_plan_id && !(await getPlan(note.basis_plan_id))) return { error: '근거로 본 계획을 찾을 수 없어요.' };

@@ -9,10 +9,12 @@ import { listTasks, parseTaskQuery } from '@/lib/tasks';
 import { listNotesForPlan } from '@/lib/review';
 import CarriedNotes from '@/components/CarriedNotes';
 import { FIELD_LABELS, formatEstimate, formatField, formatPeriod, formatTime, todaySeoul } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PlanPage({ params, searchParams }) {
+  await requireUser();
   const { id: rawId } = await params;
   const { saved, done, reopened, carried } = await searchParams;
   const id = Number(rawId);

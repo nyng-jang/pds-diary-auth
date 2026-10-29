@@ -8,6 +8,7 @@ import {
   METRICS, formatPeriodRange, getReviewByPlan, listNotes, parseReviewQuery, periodPresets, reviewQueryString, sumRows,
 } from '@/lib/review';
 import { formatMinutes, formatSignedMinutes, todaySeoul } from '@/lib/format';
+import { requireUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,7 @@ function show(metric, v) {
 
 // 돌아보기: 기간별 집계. 숫자를 누르면 그 숫자를 만든 할 일·실행 기록(근거 기록)으로 간다.
 export default async function ReviewPage({ searchParams }) {
+  await requireUser();
   const sp = await searchParams;
   const f = parseReviewQuery(sp);
   const view = sp.view in VIEWS ? sp.view : 'all';
