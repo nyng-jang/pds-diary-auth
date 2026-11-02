@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { supabaseEnv } from '@/lib/supabase/env';
+import { COOKIE_OPTIONS, loginTooOld } from '@/lib/supabase/session-policy';
 
 // 로그인 없이 열 수 있는 주소
 const PUBLIC = ['/login', '/signup', '/api/health'];
@@ -11,6 +12,7 @@ export async function middleware(request) {
   let response = NextResponse.next({ request });
   const { url, key } = supabaseEnv();
   const supabase = createServerClient(url, key, {
+    cookieOptions: COOKIE_OPTIONS,
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(list, headers) {
@@ -22,17 +24,25 @@ export async function middleware(request) {
     },
   });
   const { data } = await supabase.auth.getUser();
-  const user = data?.user;
+  let user = data?.user;
   const { pathname } = request.nextUrl;
+
+  // 로그인한 지 7일이 지났으면 Supabase에서 세션을 지우고(쿠키도 지워짐) 다시 로그인하게 한다
+  let expired = false;
+  if (user && (await loginTooOld(supabase))) {
+    await supabase.auth.signOut({ scope: 'local' });
+    user = null;
+    expired = true;
+  }
   const isPublic = PUBLIC.includes(pathname);
 
   if (!user && !isPublic) {
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ ok: false, error: '로그인이 필요해요.' }, { status: 401 });
+      return withCookies(NextResponse.json({ ok: false, error: '로그인이 필요해요.' }, { status: 401 }), response);
     }
     const to = request.nextUrl.clone();
     to.pathname = '/login';
-    to.search = '';
+    to.search = expired ? '?expired=1' : '';
     return withCookies(NextResponse.redirect(to), response);
   }
   if (user && (pathname === '/login' || pathname === '/signup')) {

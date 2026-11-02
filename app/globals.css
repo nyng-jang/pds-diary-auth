@@ -61,6 +61,8 @@ h2 { font-size: 1.15rem; margin: 0 0 10px; }
 .account-email { font-size: .85rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16em; }
 button.logout { background: var(--card); color: var(--fg); border: 1px solid var(--line); padding: 5px 12px; font-size: .88rem; font-weight: 600; }
 button.logout:hover { background: var(--chip); }
+.account-link { font-size: .85rem; color: var(--muted); white-space: nowrap; }
+.account-link:hover { color: var(--fg); }
 
 /* 로그인·가입 */
 .auth-page { max-width: 460px; margin: 40px auto; }

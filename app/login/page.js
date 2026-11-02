@@ -4,7 +4,7 @@ import { signInAction } from '../auth-actions';
 export const metadata = { title: '로그인 · 플랜두씨 다이어리' };
 
 export default async function LoginPage({ searchParams }) {
-  const { out } = await searchParams;
+  const { out, expired } = await searchParams;
   return (
     <section className="auth-page" aria-labelledby="login-h">
       <div className="page-head">
@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }) {
         </ol>
       </div>
       <p className="muted">내 계획과 기록은 로그인한 뒤에만 볼 수 있어요.</p>
-      <AuthForm mode="login" action={signInAction} notice={out ? '로그아웃했어요.' : null} />
+      <AuthForm mode="login" action={signInAction} notice={out ? '로그아웃했어요.' : expired ? '로그인한 지 7일이 지나 다시 로그인해 주세요.' : null} />
     </section>
   );
 }
