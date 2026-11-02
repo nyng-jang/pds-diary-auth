@@ -1,7 +1,9 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import { supabaseServer } from '@/lib/supabase/server';
+import { supabaseEnv } from '@/lib/supabase/env';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // 이메일이 없을 때와 비밀번호만 틀렸을 때 같은 문구를 쓴다 (어느 쪽인지 알려 주면 가입 여부가 새어 나간다)
@@ -57,4 +59,39 @@ export async function signOutAction() {
   // 이 브라우저의 세션을 Supabase Auth 서버에서 지운다. 같은 쿠키를 다시 보내도 getUser()가 거절한다.
   await supabase.auth.signOut({ scope: 'local' });
   redirect('/login?out=1');
+}
+
+// 비밀번호 바꾸기. 바꾸면 Supabase Auth가 이 세션을 뺀 같은 계정의 다른 세션을 모두 지운다.
+// 그래서 다른 브라우저에 남아 있던 예전 쿠키는 다음 요청에서 getUser()가 거절한다.
+export async function changePasswordAction(_prev, formData) {
+  const current = String(formData.get('current_password') ?? '');
+  const password = String(formData.get('password') ?? '');
+  const confirm = String(formData.get('password_confirm') ?? '');
+  if (password.length < 8) return { error: '새 비밀번호는 8자 이상으로 정해 주세요.' };
+  if (password.length > 72) return { error: '비밀번호는 72자까지 쓸 수 있어요.' };
+  if (password !== confirm) return { error: '새 비밀번호 확인이 같지 않아요.' };
+  if (password === current) return { error: '지금 비밀번호와 다른 비밀번호로 정해 주세요.' };
+
+  const supabase = await supabaseServer();
+  const { data: who, error: whoErr } = await supabase.auth.getUser();
+  if (whoErr || !who?.user?.email) redirect('/login');
+
+  // 지금 비밀번호가 맞는지: 쿠키에 남지 않는 따로 된 클라이언트로 한 번 로그인해 보고 그 세션은 바로 지운다
+  const { url, key } = supabaseEnv();
+  const probe = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error: checkErr } = await probe.auth.signInWithPassword({ email: who.user.email, password: current });
+  if (checkErr) {
+    if (checkErr.status === 429) return { error: '시도가 너무 많아요. 잠시 뒤 다시 시도해 주세요.' };
+    return { error: '지금 비밀번호가 맞지 않아요.' };
+  }
+  await probe.auth.signOut({ scope: 'local' });
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    if (error.code === 'weak_password') return { error: '더 어려운 비밀번호로 정해 주세요.' };
+    if (error.code === 'same_password') return { error: '지금 비밀번호와 다른 비밀번호로 정해 주세요.' };
+    console.error('updateUser failed', error.code ?? error.status);
+    return { error: '바꾸지 못했어요. 잠시 뒤 다시 시도해 주세요.' };
+  }
+  return { info: '비밀번호를 바꿨어요. 다른 브라우저·기기의 로그인은 끊겼어요.' };
 }

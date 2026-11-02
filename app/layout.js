@@ -24,6 +24,7 @@ export default async function RootLayout({ children }) {
               </nav>
               <form action={signOutAction} className="account">
                 <span className="account-email" title="로그인한 계정">{user.email}</span>
+                <Link href="/account/password" className="account-link">비밀번호</Link>
                 <button type="submit" className="logout">로그아웃</button>
               </form>
             </>
