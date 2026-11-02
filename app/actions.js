@@ -1,6 +1,6 @@
 'use server';
 
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getPlan, insertPlan, parsePlanForm, samePlanContent, updatePlan } from '@/lib/plans';
 import {
@@ -106,7 +106,8 @@ export async function deleteTaskAction(formData) {
   const { id: uid } = await requireUser();
   const id = Number(formData.get('id'));
   if (!Number.isSafeInteger(id)) return;
-  await deleteTask(uid, id);
+  // 남의 할 일 번호(또는 없는 번호)면 아무것도 지우지 않고 404 화면으로 (지웠다는 안내를 띄우지 않는다)
+  if (!(await deleteTask(uid, id))) notFound();
   revalidatePath('/tasks');
   redirect(`/tasks?deleted=${id}`);
 }
