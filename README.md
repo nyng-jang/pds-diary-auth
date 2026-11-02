@@ -71,6 +71,17 @@
 | 내 자료만 | `lib/*.js`의 모든 SQL에 `user_id = 로그인한 사람` 조건 |
 | 과제 6 자료 옮기기 | 계획이 없는 계정의 첫 화면 "과제 6 자료 가져오기" (`lib/import.js`). 과제 6의 `/api/export` 파일을 한 트랜잭션으로 넣는다 |
 
+## 과제 7 카드 5 — 5일 기록, 내보내기, 계정 지우기
+
+| 무엇 | 어디 |
+|---|---|
+| 5일 기록 화면 | `/days` (`app/days/page.js`, `components/DaysForms.js`, `app/days-actions.js`, `lib/days.js`) |
+| 표 | `db/006_days.sql`: `experiments`(1일차 설정) · `experiment_days`(날마다 한 줄) · `experiment_rule_changes`(계획 규칙 변경) |
+| 순서 지키기 | DB 트리거: 날짜는 저장하는 순간의 서울 날짜, 하루 한 번, 1일차 뒤 설정 고정, 규칙 변경은 2일차 뒤·3일차 앞에 한 번, 3일차는 규칙 변경이 있어야 |
+| 합계·평균 | 0.1 단위 정수로 더하고 나눔(소수 오차 없음). 화면에 "(값 + 값) ÷ 날 수 = 평균" 식을 함께 보여 줌 |
+| 내보내기 | `/api/export` — 5일 기록 3개 표도 함께. `/account`에도 버튼 |
+| 계정 지우기 | `/account` → 지금 비밀번호 + "계정 삭제" 입력 → `lib/account.js`가 한 트랜잭션에서 내 자료 9개 표와 로그인 정보(auth.users)를 함께 지움. 로그인 정보 지우기 함수는 `docs/task7-delete-account.sql`을 SQL Editor에서 한 번 실행해 만듦 |
+
 ## 실행
 
 ```bash

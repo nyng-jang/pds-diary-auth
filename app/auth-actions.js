@@ -95,3 +95,34 @@ export async function changePasswordAction(_prev, formData) {
   }
   return { info: '비밀번호를 바꿨어요. 다른 브라우저·기기의 로그인은 끊겼어요.' };
 }
+
+// 계정 지우기. 지금 비밀번호와 확인 문구를 다시 받아, 맞을 때만 내 자료 전부와 로그인 정보를 함께 지운다.
+export async function deleteAccountAction(_prev, formData) {
+  const current = String(formData.get('current_password') ?? '');
+  const confirmText = String(formData.get('confirm_text') ?? '').trim();
+  if (confirmText !== '계정 삭제') return { error: '확인 칸에 "계정 삭제"라고 적어 주세요.' };
+
+  const supabase = await supabaseServer();
+  const { data: who, error: whoErr } = await supabase.auth.getUser();
+  if (whoErr || !who?.user?.email) redirect('/login');
+
+  const { url, key } = supabaseEnv();
+  const probe = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error: checkErr } = await probe.auth.signInWithPassword({ email: who.user.email, password: current });
+  if (checkErr) {
+    if (checkErr.status === 429) return { error: '시도가 너무 많아요. 잠시 뒤 다시 시도해 주세요.' };
+    return { error: '지금 비밀번호가 맞지 않아요.' };
+  }
+  await probe.auth.signOut({ scope: 'local' });
+
+  try {
+    const { deleteAccount } = await import('@/lib/account');
+    await deleteAccount(who.user.id);
+  } catch (e) {
+    console.error('deleteAccount failed', e?.code ?? e?.name);
+    return { error: '계정을 지우지 못했어요. 아무것도 지워지지 않았어요. 잠시 뒤 다시 시도해 주세요.' };
+  }
+  // 로그인 정보가 지워져 세션도 사라졌다. 이 브라우저의 쿠키를 지운다 (서버 응답이 실패해도 쿠키는 지운다).
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+  redirect('/login?deleted=1');
+}
