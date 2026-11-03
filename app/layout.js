@@ -21,10 +21,11 @@ export default async function RootLayout({ children }) {
                 <Link href="/">계획</Link>
                 <Link href="/tasks">할 일</Link>
                 <Link href="/review">돌아보기</Link>
+                <Link href="/days">5일 기록</Link>
               </nav>
               <form action={signOutAction} className="account">
                 <span className="account-email" title="로그인한 계정">{user.email}</span>
-                <Link href="/account/password" className="account-link">비밀번호</Link>
+                <Link href="/account" className="account-link">내 계정</Link>
                 <button type="submit" className="logout">로그아웃</button>
               </form>
             </>

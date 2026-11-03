@@ -378,3 +378,7 @@ main:has(.review-head), main:has(.evidence-table) { max-width: 1080px; }
 button.link-btn { background: none; border: 0; padding: 4px 2px; color: var(--muted); text-decoration: underline; font-weight: 600; cursor: pointer; }
 .tasks-new { margin-bottom: 28px; }
 .do-panel > summary.wide-btn { position: relative; }
+
+/* ── 5일 기록·계정 (과제 7 카드 5) ───────────────── */
+.send.danger { background: var(--warn-fg); color: #fff; }
+.rule-change-row td, .rule-change-row th { background: var(--soon-bg); }

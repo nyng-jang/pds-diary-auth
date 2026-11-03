@@ -132,6 +132,54 @@
         "carried_at": { "type": "timestamptz", "nullable": true },
         "created_at": { "type": "timestamptz", "default": "now()" }
       }
+    },
+    "experiments": {
+      "description": "5일 기록의 1일차 설정: 질문·지표·단위·계산 규칙·빠진 값/중복/튀는 값/반올림 규칙·주 시작 요일·1·2일차 계획 규칙. 계정마다 하나.",
+      "source": "db/006_days.sql",
+      "delete": "계정 지우기 트랜잭션에서만",
+      "update": "1일차 기록 전까지만 (트리거 experiments_before_update)",
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "user_id": { "type": "uuid", "unique": true },
+        "metric_kind": { "type": "text", "enum": ["completion_rate", "time_gap", "manual"] },
+        "question": { "type": "text" }, "metric_name": { "type": "text" }, "unit": { "type": "text" },
+        "calc_rule": { "type": "text" }, "missing_rule": { "type": "text" }, "duplicate_rule": { "type": "text" },
+        "outlier_rule": { "type": "text" }, "outlier_threshold": { "type": "numeric(10,1)", "note": "단위는 unit" },
+        "rounding_rule": { "type": "text" }, "week_start": { "type": "text", "enum": ["월요일", "일요일"] },
+        "plan_rule": { "type": "text", "note": "1·2일차 계획 규칙" },
+        "created_at": { "type": "timestamptz" }, "updated_at": { "type": "timestamptz" }
+      }
+    },
+    "experiment_days": {
+      "description": "날마다 한 줄, 1~5일차. 고치거나 지울 수 없다.",
+      "source": "db/006_days.sql",
+      "delete": "계정 지우기 트랜잭션에서만",
+      "check": ["(experiment_id, day_no) unique", "(experiment_id, record_date) unique, 앞 기록보다 뒤 날짜", "3일차부터는 experiment_rule_changes가 있어야 들어간다"],
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "experiment_id": { "type": "bigint", "references": "experiments.id" },
+        "day_no": { "type": "integer", "note": "1~5, 트리거가 정함" },
+        "record_date": { "type": "date", "note": "저장하는 순간의 서울 날짜, 트리거가 정함" },
+        "plan_rule": { "type": "text", "note": "이날 따른 계획 규칙, 트리거가 정함" },
+        "value": { "type": "numeric(10,1)", "note": "단위는 experiments.unit" },
+        "numerator": { "type": "integer", "nullable": true, "note": "완료율: 끝낸 할 일 수 / 시간 차이: 실제 분 합" },
+        "denominator": { "type": "integer", "nullable": true, "note": "완료율: 그날 마감 할 일 수 / 시간 차이: 예상 분 합" },
+        "detail": { "type": "jsonb", "note": "값을 계산할 때 쓴 할 일 목록" },
+        "note": { "type": "text" }, "created_at": { "type": "timestamptz" }
+      }
+    },
+    "experiment_rule_changes": {
+      "description": "계획 규칙을 바꾼 기록. 계정마다 한 번, 2일차 기록 뒤·3일차 기록 앞에만 들어간다.",
+      "source": "db/006_days.sql",
+      "delete": "계정 지우기 트랜잭션에서만",
+      "columns": {
+        "id": { "type": "bigint", "key": "primary" },
+        "experiment_id": { "type": "bigint", "unique": true },
+        "day1_id": { "type": "bigint", "references": "experiment_days.id", "note": "1일차 기록" },
+        "day2_id": { "type": "bigint", "references": "experiment_days.id", "note": "2일차 기록" },
+        "before_rule": { "type": "text" }, "after_rule": { "type": "text" }, "reason": { "type": "text" },
+        "changed_at": { "type": "timestamptz", "note": "바꾼 시각" }
+      }
     }
   },
   "relations": [
@@ -155,7 +203,7 @@
   "export": {
     "url": "/api/export",
     "file": "pds-export-YYYYMMDD-HHMM.json (JSON 파일 하나)",
-    "shape": "{ format, schema, schema_version, exported_at, time_zone, units, counts, data: { plans, plan_revisions, tasks, task_logs, task_completions, review_notes } }",
+    "shape": "{ format, schema, schema_version, exported_at, time_zone, units, counts, data: { plans, plan_revisions, tasks, task_logs, task_completions, review_notes, experiments, experiment_days, experiment_rule_changes } }",
     "rows": "표마다 모든 열, id 오름차순. 한 번의 읽기 전용 트랜잭션에서 읽는다.",
     "excluded": "DB 접속 주소·비밀번호 같은 설정값은 담지 않는다."
   }
