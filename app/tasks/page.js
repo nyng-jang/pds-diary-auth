@@ -2,6 +2,7 @@ import Link from 'next/link';
 import PromptBox from '@/components/PromptBox';
 import TaskCard from '@/components/TaskCard';
 import TaskForm from '@/components/TaskForm';
+import Fold from '@/components/Fold';
 import { createTaskAction } from '@/app/actions';
 import { PRIORITIES } from '@/lib/plans';
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/lib/tasks';
 import { todaySeoul } from '@/lib/format';
 import { requireUser } from '@/lib/auth';
+import { computeToday, getDiary } from '@/lib/days';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +26,10 @@ export default async function TasksPage({ searchParams }) {
   const tags = await listTags(uid);
   const plans = await listPlanOptions(uid);
   const today = todaySeoul();
+  // 5일 기록이 진행 중이면 오늘(서울) 마감 할 일 수를 위에 보여 준다. 5일 기록과 같은 함수로 센다 (읽기만 한다).
+  const { exp, days, change } = await getDiary(uid);
+  const todayTasks = exp && days.length < 5 ? (await computeToday(uid, exp)).detail : null;
+  const planRule = change?.after_rule ?? exp?.plan_rule;
 
   // 지금 보고 있는 조건 (완료·되돌리기 후 이 화면으로 돌아오게)
   const params = new URLSearchParams();
@@ -62,17 +68,28 @@ export default async function TasksPage({ searchParams }) {
           </ol>
         </div>
         {notice && <p className="ok" role="status">{String(notice)}</p>}
+        {todayTasks && (
+          <p className="today-strip" data-testid="today-strip">
+            <span>오늘({today}) 마감 할 일 <strong>{todayTasks.length}개</strong> · 완료 {todayTasks.filter((t) => t.status === '완료').length}개</span>
+            <span className="rule">지금 계획 규칙: {planRule}</span>
+            <Link href="/tasks?due=today">오늘 마감만 보기</Link>
+            <Link href="/days">5일 기록 →</Link>
+          </p>
+        )}
       </section>
 
-      <section id="new" className="tasks-new">
+      <section className="tasks-new">
         {plans.length === 0 ? (
           <p className="muted">할 일은 계획에 딸려요. <Link href="/">먼저 계획을 세워 주세요.</Link></p>
         ) : (
-          <TaskForm action={createTaskAction} plans={plans} defaultPlanId={f.plan ?? undefined} heading="새 할 일 만들기" submitLabel="할 일 저장" />
+          <Fold id="new" label="새 할 일 만들기" defaultOpen={total === 0}>
+            <TaskForm action={createTaskAction} plans={plans} defaultPlanId={f.plan ?? undefined} defaultDue={today} heading="새 할 일 만들기" submitLabel="할 일 저장" />
+          </Fold>
         )}
       </section>
 
       <section aria-label="할 일 찾기와 목록">
+        <Fold id="find" label={`할 일 찾기 · 거르기 · 정렬 (지금: ${sort.name})`} defaultOpen={filtered}>
         <PromptBox title="할 일 찾기" icon="search" stateText={`전체 ${total}개 중 ${tasks.length}개`}>
           <form method="get" action="/tasks" className="pform" role="search">
             <label className="pform-main">
@@ -133,6 +150,7 @@ export default async function TasksPage({ searchParams }) {
             </div>
           </form>
         </PromptBox>
+        </Fold>
 
         <p className="count">
           전체 {total}개 중 <strong>{tasks.length}개</strong> 보는 중

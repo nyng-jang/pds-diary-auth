@@ -2,6 +2,7 @@ import Link from 'next/link';
 import FlowCard, { Chip, Meta } from '@/components/FlowCard';
 import ImportForm from '@/components/ImportForm';
 import PlanForm from '@/components/PlanForm';
+import Fold from '@/components/Fold';
 import { createPlanAction, importExportAction } from './actions';
 import { listPlans } from '@/lib/plans';
 import { getNote } from '@/lib/review';
@@ -72,11 +73,13 @@ export default async function Home({ searchParams }) {
           ))}
         </div>
       </section>
-      <section id="new-plan">
+      <section>
         {note?.next_plan_id && (
           <p className="ok" role="status">고칠 점 #{note.id}은(는) 이미 <Link href={`/plans/${note.next_plan_id}#carried`}>계획 #{note.next_plan_id}</Link>로 넘어갔어요.</p>
         )}
-        <PlanForm key={carryNote?.id ?? 0} action={createPlanAction} heading="새 계획 세우기" submitLabel="계획 저장" carryNote={carryNote} />
+        <Fold id="new-plan" label="새 계획 세우기" defaultOpen={plans.length === 0 || Boolean(carryNote)}>
+          <PlanForm key={carryNote?.id ?? 0} action={createPlanAction} heading="새 계획 세우기" submitLabel="계획 저장" carryNote={carryNote} />
+        </Fold>
       </section>
       <section className="export" aria-labelledby="export-h">
         <h2 id="export-h">내 자료 내보내기</h2>

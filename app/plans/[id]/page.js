@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import FlowCard, { Chip, Meta } from '@/components/FlowCard';
+import Fold from '@/components/Fold';
 import PlanForm from '@/components/PlanForm';
 import TaskCard from '@/components/TaskCard';
 import { updatePlanAction } from '@/app/actions';
@@ -114,9 +115,11 @@ export default async function PlanPage({ params, searchParams }) {
         </ol>
       </section>
 
-      <section id="edit">
-        <p className="muted">고쳐도 계획 번호(#{plan.id})는 그대로이고, 지금 내용은 이력에 v{plan.version}로 남아요.</p>
-        <PlanForm key={plan.version} action={updatePlanAction} plan={plan} heading="계획 고치기" submitLabel="고친 계획 저장" />
+      <section>
+        <Fold id="edit" label="계획 고치기">
+          <p className="muted">고쳐도 계획 번호(#{plan.id})는 그대로이고, 지금 내용은 이력에 v{plan.version}로 남아요.</p>
+          <PlanForm key={plan.version} action={updatePlanAction} plan={plan} heading="계획 고치기" submitLabel="고친 계획 저장" />
+        </Fold>
       </section>
     </>
   );
