@@ -2,6 +2,7 @@ import './globals.css';
 import Link from 'next/link';
 import { currentUser } from '@/lib/auth';
 import { signOutAction } from './auth-actions';
+import NavLinks from '@/components/NavLinks';
 
 export const metadata = {
   title: '플랜두씨 다이어리',
@@ -17,12 +18,7 @@ export default async function RootLayout({ children }) {
           <Link href="/" className="brand"><span className="brand-mark">P·D·S</span>플랜두씨 다이어리</Link>
           {user && (
             <>
-              <nav className="nav" aria-label="주 메뉴">
-                <Link href="/">계획</Link>
-                <Link href="/tasks">할 일</Link>
-                <Link href="/review">돌아보기</Link>
-                <Link href="/days">5일 기록</Link>
-              </nav>
+              <NavLinks />
               <form action={signOutAction} className="account">
                 <span className="account-email" title="로그인한 계정">{user.email}</span>
                 <Link href="/account" className="account-link">내 계정</Link>

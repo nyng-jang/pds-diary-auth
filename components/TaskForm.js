@@ -5,9 +5,10 @@ import PromptBox from './PromptBox';
 
 const PRIORITIES = ['높음', '보통', '낮음'];
 
-export default function TaskForm({ action, task, plans, defaultPlanId, submitLabel, heading }) {
+export default function TaskForm({ action, task, plans, defaultPlanId, defaultDue, submitLabel, heading }) {
   const [state, formAction, pending] = useActionState(action, null);
-  const t = task ?? { priority: '보통', plan_id: defaultPlanId ?? plans[0]?.id, tags: [] };
+  // 새 할 일의 마감일은 오늘(서울)로 채워 둔다. 5일 기록은 "그날 마감인 할 일"로 세기 때문이다. 지우면 마감 없음.
+  const t = task ?? { priority: '보통', plan_id: defaultPlanId ?? plans[0]?.id, tags: [], due_date: defaultDue };
 
   return (
     <PromptBox title={heading} icon="play" state={pending ? 'busy' : state?.error ? 'error' : 'idle'}>
@@ -33,7 +34,7 @@ export default function TaskForm({ action, task, plans, defaultPlanId, submitLab
         </label>
         <div className="pform-fields">
           <label>
-            <span>마감일 <small>(비우면 마감 없음)</small></span>
+            <span>마감일 <small>{task ? '(비우면 마감 없음)' : '(기본은 오늘 · 비우면 마감 없음)'}</small></span>
             <input type="date" name="due_date" defaultValue={t.due_date ?? ''} />
           </label>
           <label>

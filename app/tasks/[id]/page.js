@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import DeleteTaskButton from '@/components/DeleteTaskButton';
 import TaskCard from '@/components/TaskCard';
+import Fold from '@/components/Fold';
 import TaskForm from '@/components/TaskForm';
 import LogCard from '@/components/LogCard';
 import LogForm from '@/components/LogForm';
@@ -61,8 +62,10 @@ export default async function TaskPage({ params, searchParams }) {
         <LogForm key={logs.length} taskId={task.id} requestKey={crypto.randomUUID()} estimated={task.estimated_minutes} />
       </section>
 
-      <section id="edit">
-        <TaskForm key={String(task.updated_at)} action={updateTaskAction} task={task} plans={plans} heading="할 일 고치기" submitLabel="고친 내용 저장" />
+      <section>
+        <Fold id="edit" label="할 일 고치기">
+          <TaskForm key={String(task.updated_at)} action={updateTaskAction} task={task} plans={plans} heading="할 일 고치기" submitLabel="고친 내용 저장" />
+        </Fold>
       </section>
 
       <section className="danger-zone">

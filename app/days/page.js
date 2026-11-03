@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/auth';
 import { KINDS, SETTING_FIELDS, computeToday, getDiary, summarize, toTenths, fmtTenths, weekStartOf } from '@/lib/days';
 import { formatTime, todaySeoul } from '@/lib/format';
 import { DayForm, RuleForm, SettingsForm } from '@/components/DaysForms';
+import Fold from '@/components/Fold';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '5일 기록 · 플랜두씨 다이어리' };
@@ -46,8 +47,40 @@ export default async function DaysPage({ searchParams }) {
           <h1 id="days-h">5일 기록</h1>
           <span className="muted">서로 다른 날짜 5일 · 2일차 뒤 3일차 앞에 계획 규칙 하나 바꾸기 · 서울 시간 기준</span>
         </div>
+      </section>
 
-        {exp && (
+      {exp && (
+        <section aria-label="오늘 할 일" className="days-today">
+          {days.length >= 5 && <p className="ok" role="status">5일 기록을 모두 남겼어요.</p>}
+          {needRule && <RuleForm beforeRule={exp.plan_rule} />}
+          {!needRule && recordedToday && days.length < 5 && (
+            <p className="muted">오늘({today}) 기록은 남겼어요. 다음 기록은 내일(서울) 남길 수 있어요.</p>
+          )}
+          {canRecord && (
+            <DayForm
+              dayNo={days.length + 1}
+              manual={exp.metric_kind === 'manual'}
+              unit={unit}
+              preview={preview.ok ? (
+                !preview.manual && (
+                  <p>
+                    오늘({today}) 값 미리 보기: <strong>{fmtTenths(toTenths(preview.value))}{unit}</strong>{' '}
+                    <span className="muted">
+                      ({exp.metric_kind === 'completion_rate'
+                        ? `${preview.numerator} ÷ ${preview.denominator} × 100`
+                        : `실제 ${preview.numerator}분 − 예상 ${preview.denominator}분`}
+                      , 오늘 마감인 할 일 {preview.detail.length}개. 저장할 때 다시 계산해요)
+                    </span>
+                  </p>
+                )
+              ) : <p className="error">{preview.reason}</p>}
+            />
+          )}
+        </section>
+      )}
+
+      {exp && (
+        <section aria-label="1일차에 정한 것">
           <div className="panel">
             <div className="panel-head">
               <h2>1일차에 정한 것</h2>
@@ -61,18 +94,21 @@ export default async function DaysPage({ searchParams }) {
               <dt>주 시작 요일</dt><dd>{exp.week_start}</dd>
             </dl>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {editable && (
         <section aria-labelledby="set-h">
-          <h2 id="set-h">{exp ? '정한 것 고치기 (1일차 전까지)' : '먼저 질문·지표·규칙을 한 번 정해요'}</h2>
+          {!exp && <h2 id="set-h">먼저 질문·지표·규칙을 한 번 정해요</h2>}
+          <Fold id="settings" label="정한 것 고치기 (1일차 기록 전까지)" defaultOpen={!exp || Boolean(sp.kind)}>
+          {exp && <h2 id="set-h">정한 것 고치기 (1일차 전까지)</h2>}
           <nav className="tabs" aria-label="지표 종류">
             {Object.entries(KINDS).map(([k, v]) => (
-              <Link key={k} href={`/days?kind=${k}`} aria-current={kind === k ? 'true' : undefined}>{v.label}</Link>
+              <Link key={k} href={`/days?kind=${k}#settings`} aria-current={kind === k ? 'true' : undefined}>{v.label}</Link>
             ))}
           </nav>
           <SettingsForm key={kind} kind={kind} kindLabel={KINDS[kind].label} values={values} fields={SETTING_FIELDS} />
+          </Fold>
         </section>
       )}
 
@@ -173,35 +209,6 @@ export default async function DaysPage({ searchParams }) {
         </section>
       )}
 
-      {exp && (
-        <section aria-label="오늘 할 일">
-          {days.length >= 5 && <p className="ok" role="status">5일 기록을 모두 남겼어요.</p>}
-          {needRule && <RuleForm beforeRule={exp.plan_rule} />}
-          {!needRule && recordedToday && days.length < 5 && (
-            <p className="muted">오늘({today}) 기록은 남겼어요. 다음 기록은 내일(서울) 남길 수 있어요.</p>
-          )}
-          {canRecord && (
-            <DayForm
-              dayNo={days.length + 1}
-              manual={exp.metric_kind === 'manual'}
-              unit={unit}
-              preview={preview.ok ? (
-                !preview.manual && (
-                  <p>
-                    오늘({today}) 값 미리 보기: <strong>{fmtTenths(toTenths(preview.value))}{unit}</strong>{' '}
-                    <span className="muted">
-                      ({exp.metric_kind === 'completion_rate'
-                        ? `${preview.numerator} ÷ ${preview.denominator} × 100`
-                        : `실제 ${preview.numerator}분 − 예상 ${preview.denominator}분`}
-                      , 오늘 마감인 할 일 {preview.detail.length}개. 저장할 때 다시 계산해요)
-                    </span>
-                  </p>
-                )
-              ) : <p className="error">{preview.reason}</p>}
-            />
-          )}
-        </section>
-      )}
     </>
   );
 }
